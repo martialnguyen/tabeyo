@@ -22,6 +22,9 @@ FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project-id.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+CLOUDINARY_API_KEY=your-cloudinary-api-key
+CLOUDINARY_API_SECRET=your-cloudinary-api-secret
 ```
 
 Do not use `FIREBASE_SERVICE_ACCOUNT_PATH` on Render. Use the individual Firebase fields above.
@@ -53,6 +56,14 @@ CRON_SECRET=same-value-as-render-cron-secret
 
 The workflow file is `.github/workflows/auto-sold.yml`.
 
-## Important Upload Note
+## Image Uploads
 
-The current upload implementation stores files in `server/uploads`. This works locally, but free hosting may not keep uploaded files forever after restarts or redeploys. For a real public deployment, move product/QR uploads to Firebase Storage or Cloudinary.
+Product images, variant images, and payment QR images upload to Cloudinary. Firestore stores only the returned Cloudinary URLs.
+
+Create a free Cloudinary account, then copy the three values from Cloudinary Dashboard:
+
+```env
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```

@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { collection, serializeDoc, sumVariantStock } from '../utils/firestore.js';
 import { adminAuth } from '../middleware/adminAuth.js';
 import { upload } from '../middleware/upload.js';
+import { uploadBufferToCloudinary, uploadFilesToCloudinary } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ function parseBoolean(value) {
   return value === true || value === 'true' || value === 'on';
 }
 
-function normalizeProductPayload(body, files = []) {
+async function normalizeProductPayload(body, files = []) {
   const productImageFiles = files.images || [];
   const variantImageFiles = files.variantImages || [];
   const hasExistingImages = Object.prototype.hasOwnProperty.call(body, 'existingImages');
@@ -28,8 +29,12 @@ function normalizeProductPayload(body, files = []) {
     }))
   }));
   const newVariantImageIds = JSON.parse(body.newVariantImageIds || '[]');
+  const [productImageUrls, variantImageUrls] = await Promise.all([
+    uploadFilesToCloudinary(productImageFiles, 'tabeyo/products'),
+    uploadFilesToCloudinary(variantImageFiles, 'tabeyo/variants')
+  ]);
   const variantImageMap = new Map(
-    variantImageFiles.map((file, index) => [newVariantImageIds[index], `/uploads/${file.filename}`])
+    variantImageUrls.map((url, index) => [newVariantImageIds[index], url])
   );
   const variants = JSON.parse(body.variants || '[]').map((variant) => ({
     _id: variant._id || randomUUID(),
@@ -73,9 +78,9 @@ function normalizeProductPayload(body, files = []) {
     existingImages,
     imageOrder,
     updatedAt: new Date(),
-    newImages: productImageFiles.map((file, index) => ({
+    newImages: productImageUrls.map((url, index) => ({
       id: newImageIds[index] || `new-${index}`,
-      url: `/uploads/${file.filename}`
+      url
     }))
   };
 }
@@ -137,7 +142,7 @@ const productUpload = upload.fields([
 
 router.post('/products', productUpload, async (req, res) => {
   try {
-    const payload = normalizeProductPayload(req.body, req.files);
+    const payload = await normalizeProductPayload(req.body, req.files);
     const existingImages = payload.existingImages || [];
     const productRef = collection('products').doc();
     const product = {
@@ -162,7 +167,7 @@ router.put('/products/:id', productUpload, async (req, res) => {
     const productDoc = await productRef.get();
     if (!productDoc.exists) return res.status(404).json({ message: 'Product not found' });
 
-    const payload = normalizeProductPayload(req.body, req.files);
+    const payload = await normalizeProductPayload(req.body, req.files);
     const currentProduct = productDoc.data();
     const existingImages = payload.existingImages ?? currentProduct.images ?? [];
     const nextProduct = {
@@ -213,7 +218,7 @@ router.put('/payment-settings', upload.single('qrImage'), async (req, res) => {
     transferContentTemplate: req.body.transferContentTemplate || 'DH-{orderCode}-{phone}',
     isActive: parseBoolean(req.body.isActive)
   };
-  if (req.file) payload.qrImage = `/uploads/${req.file.filename}`;
+  if (req.file) payload.qrImage = await uploadBufferToCloudinary(req.file, 'tabeyo/payment');
 
   const snapshot = await collection('paymentSettings').orderBy('updatedAt', 'desc').limit(1).get();
   const paymentRef = snapshot.empty ? collection('paymentSettings').doc() : snapshot.docs[0].ref;
