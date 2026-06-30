@@ -1,0 +1,18 @@
+name: Auto Sold
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"
+  workflow_dispatch:
+
+jobs:
+  auto-sold:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger auto sold endpoint
+        run: |
+          curl -sS -X POST "$API_BASE_URL/api/cron/auto-sold" \
+            -H "x-cron-secret: $CRON_SECRET"
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
