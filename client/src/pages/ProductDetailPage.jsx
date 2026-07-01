@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Alert, Rate, Skeleton, Upload, message } from 'antd';
+import { Alert, Pagination, Rate, Skeleton, Upload, message } from 'antd';
 import { ImagePlus, Minus, Plus, ShoppingCart, UploadCloud, X } from 'lucide-react';
 import ShopHeader from '../components/ShopHeader.jsx';
 import { api, assetUrl } from '../api/client.js';
 
 const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+const REVIEW_PAGE_SIZE = 5;
 
 function getInitials(name = '') {
   return name
@@ -53,6 +54,7 @@ export default function ProductDetailPage() {
   const [reviewMedia, setReviewMedia] = useState([]);
   const [reviewMediaFiles, setReviewMediaFiles] = useState([]);
   const [reviewSubmitError, setReviewSubmitError] = useState('');
+  const [reviewPage, setReviewPage] = useState(1);
   const reviewAvatarRef = useRef(null);
   const reviewMediaRef = useRef([]);
 
@@ -66,6 +68,7 @@ export default function ProductDetailPage() {
         setSelectedVariantId(firstAvailableVariant?._id || '');
         setSelectedOptions(firstAvailableVariant?.optionValues || {});
         setMainImage(firstAvailableVariant?.image || item.images?.[0] || '');
+        setReviewPage(1);
       })
       .catch(() => setError('Khong tim thay san pham.'))
       .finally(() => setLoading(false));
@@ -121,6 +124,11 @@ export default function ProductDetailPage() {
 
   const availableStock = selectedVariant ? selectedVariant.stock : product?.stock || 0;
   const isOutOfStock = availableStock <= 0;
+  const visibleReviews = useMemo(() => product?.reviews?.filter((review) => review.isVisible) || [], [product]);
+  const pagedReviews = useMemo(
+    () => visibleReviews.slice((reviewPage - 1) * REVIEW_PAGE_SIZE, reviewPage * REVIEW_PAGE_SIZE),
+    [reviewPage, visibleReviews]
+  );
 
   const buyNow = () => {
     if (!selectedVariantId || isOutOfStock) return;
@@ -337,9 +345,9 @@ export default function ProductDetailPage() {
           <p className="whitespace-pre-line text-gray-700">{product.description}</p>
         </section>
 
-        <section className="mt-4 bg-white p-4">
+        <section className="mt-4 flex flex-col bg-white p-4">
           <h2 className="mb-3 text-lg font-semibold">Danh gia cua nguoi mua</h2>
-          <form onSubmit={submitReview} className="mb-5 rounded-sm border border-gray-200 bg-gray-50 p-4">
+          <form onSubmit={submitReview} className="order-last mt-5 rounded-sm border border-gray-200 bg-gray-50 p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="m-0 text-base font-semibold">Viet danh gia cua ban</h3>
@@ -418,7 +426,7 @@ export default function ProductDetailPage() {
             </div>
           </form>
           <div className="space-y-4">
-            {product.reviews?.filter((review) => review.isVisible).map((review) => (
+            {pagedReviews.map((review) => (
               <article key={review._id} className="flex gap-3 border-b border-gray-100 pb-4 last:border-b-0">
                 <div
                   className="h-11 w-11 shrink-0 overflow-hidden rounded-full text-white"
@@ -462,7 +470,18 @@ export default function ProductDetailPage() {
                 </div>
               </article>
             ))}
-            {!product.reviews?.some((review) => review.isVisible) && <p className="text-gray-500">Chua co danh gia hien thi.</p>}
+            {!visibleReviews.length && <p className="text-gray-500">Chua co danh gia hien thi.</p>}
+            {visibleReviews.length > REVIEW_PAGE_SIZE && (
+              <div className="flex justify-center pt-2">
+                <Pagination
+                  current={reviewPage}
+                  pageSize={REVIEW_PAGE_SIZE}
+                  total={visibleReviews.length}
+                  showSizeChanger={false}
+                  onChange={setReviewPage}
+                />
+              </div>
+            )}
           </div>
         </section>
       </main>
