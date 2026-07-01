@@ -25,6 +25,7 @@ FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
 CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
 CLOUDINARY_API_KEY=your-cloudinary-api-key
 CLOUDINARY_API_SECRET=your-cloudinary-api-secret
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 ```
 
 Do not use `FIREBASE_SERVICE_ACCOUNT_PATH` on Render. Use the individual Firebase fields above.
@@ -67,3 +68,13 @@ CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 ```
+
+## Discord New Order Notifications
+
+In Discord, open your channel settings, create an Incoming Webhook, copy its Webhook URL, then set this Render environment variable:
+
+```env
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+```
+
+When a new order is created, the backend sends an embed with order code, customer, phone, payment method, total amount, address, note, and line items.

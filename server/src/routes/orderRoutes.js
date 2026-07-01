@@ -1,6 +1,7 @@
 import express from 'express';
 import { collection, serializeDoc, sumVariantStock } from '../utils/firestore.js';
 import { createOrderCode } from '../utils/numbers.js';
+import { notifyDiscordNewOrder } from '../utils/discord.js';
 
 const router = express.Router();
 
@@ -81,7 +82,9 @@ router.post('/', async (req, res) => {
       transaction.set(orderRef, createdOrder);
     });
 
-    res.status(201).json({ order: { _id: orderRef.id, ...createdOrder } });
+    const order = { _id: orderRef.id, ...createdOrder };
+    await notifyDiscordNewOrder(order);
+    res.status(201).json({ order });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
