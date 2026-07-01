@@ -27,6 +27,15 @@ function shouldUseRemoteAvatar(url = '') {
   return url && !url.includes('i.pravatar.cc');
 }
 
+function getReviewMedia(review = {}) {
+  return (review.media || review.images || [])
+    .map((item) => {
+      if (typeof item === 'string') return { url: item, type: item.match(/\.(mp4|webm|mov)(\?|$)/i) ? 'video' : 'image' };
+      return { url: item.url || '', type: item.type === 'video' ? 'video' : 'image' };
+    })
+    .filter((item) => item.url);
+}
+
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -284,6 +293,19 @@ export default function ProductDetailPage() {
                     <span className="shrink-0 text-xs text-gray-500">{new Date(review.reviewDate).toLocaleDateString('vi-VN')}</span>
                   </div>
                   <p className="mt-2 text-gray-700">{review.content}</p>
+                  {getReviewMedia(review).length > 0 && (
+                    <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                      {getReviewMedia(review).map((media, index) => (
+                        <div key={`${review._id}-${media.url}-${index}`} className="aspect-square overflow-hidden rounded-sm bg-gray-100">
+                          {media.type === 'video' ? (
+                            <video src={assetUrl(media.url)} controls className="h-full w-full object-cover" />
+                          ) : (
+                            <img src={assetUrl(media.url)} alt="" loading="lazy" className="h-full w-full object-cover" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </article>
             ))}

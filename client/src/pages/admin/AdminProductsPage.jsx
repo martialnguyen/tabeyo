@@ -1,16 +1,75 @@
 import { useEffect, useState } from 'react';
-import { Button, Form, Input, InputNumber, Modal, Popconfirm, Space, Switch, Table, Tag, Upload, message } from 'antd';
-import { GripVertical, ImagePlus, Plus, Trash2, UploadCloud } from 'lucide-react';
+import { Avatar, Button, Checkbox, Form, Input, InputNumber, Modal, Popconfirm, Rate, Space, Switch, Table, Tag, Upload, message } from 'antd';
+import { GripVertical, ImagePlus, Plus, Trash2, UploadCloud, Video } from 'lucide-react';
 import { api, assetUrl } from '../../api/client.js';
-
-const defaultReviews = '[{"customerName":"Khach hang","avatarUrl":"","rating":5,"content":"San pham dep, giao nhanh.","isVisible":true}]';
 
 function makeId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+const defaultReviews = [
+  {
+    _id: makeId('review'),
+    customerName: 'Khach hang',
+    avatarUrl: '',
+    rating: 5,
+    content: 'San pham dep, giao nhanh.',
+    media: [],
+    isVisible: true,
+    reviewDate: new Date().toISOString().slice(0, 10)
+  }
+];
+
 function buildVariantLabel(optionValues = {}) {
   return Object.values(optionValues).filter(Boolean).join(' / ');
+}
+
+function getInitials(name = '') {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase() || 'KH';
+}
+
+function normalizeReviewMedia(review = {}) {
+  return (review.media || review.images || [])
+    .map((item, index) => {
+      if (typeof item === 'string') {
+        return {
+          id: `existing-media-${index}-${item}`,
+          type: item.match(/\.(mp4|webm|mov)(\?|$)/i) ? 'video' : 'image',
+          url: item,
+          source: 'existing'
+        };
+      }
+      return {
+        id: item.id || `existing-media-${index}-${item.url}`,
+        type: item.type === 'video' ? 'video' : 'image',
+        url: item.url || '',
+        source: 'existing'
+      };
+    })
+    .filter((item) => item.url);
+}
+
+function normalizeReviews(reviews = []) {
+  return reviews.map((review) => ({
+    _id: review._id || makeId('review'),
+    customerName: review.customerName || '',
+    avatarUrl: review.avatarUrl || '',
+    rating: Number(review.rating || 5),
+    content: review.content || '',
+    media: normalizeReviewMedia(review),
+    isVisible: review.isVisible !== false,
+    reviewDate: review.reviewDate ? new Date(review.reviewDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)
+  }));
+}
+
+function isVideoMedia(media) {
+  return media?.type === 'video' || media?.file?.originFileObj?.type?.startsWith('video/');
 }
 
 function normalizeGroups(groups = []) {
@@ -64,7 +123,15 @@ export default function AdminProductsPage() {
   const [variantGroups, setVariantGroups] = useState([]);
   const [variants, setVariants] = useState([]);
   const [variantImageFiles, setVariantImageFiles] = useState({});
+  const [reviews, setReviews] = useState([]);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [reviewEditorOpen, setReviewEditorOpen] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [reviewAvatarFile, setReviewAvatarFile] = useState(null);
+  const [reviewMediaItems, setReviewMediaItems] = useState([]);
+  const [reviewMediaUploadList, setReviewMediaUploadList] = useState([]);
   const [form] = Form.useForm();
+  const [reviewForm] = Form.useForm();
 
   const loadProducts = () => api.get('/admin/products').then((res) => setProducts(res.data.products));
 
@@ -78,6 +145,12 @@ export default function AdminProductsPage() {
     });
     Object.values(variantImageFiles).forEach((item) => {
       if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+    });
+    reviews.forEach((review) => {
+      if (review.avatarFile?.previewUrl) URL.revokeObjectURL(review.avatarFile.previewUrl);
+      review.media?.forEach((item) => {
+        if (item.source === 'new' && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      });
     });
 
     const groups = product?.variantGroups?.length
@@ -104,6 +177,7 @@ export default function AdminProductsPage() {
     setVariantGroups(groups);
     setVariants(nextVariants);
     setVariantImageFiles({});
+    setReviews(product ? normalizeReviews(product.reviews || []) : defaultReviews.map((review) => ({ ...review })));
     setImageItems(
       (product?.images || []).map((image, index) => ({
         id: `existing-${index}-${image}`,
@@ -116,8 +190,7 @@ export default function AdminProductsPage() {
       product
         ? {
             ...product,
-            images: undefined,
-            reviewsJson: JSON.stringify(product.reviews || [], null, 2)
+            images: undefined
           }
         : {
             name: '',
@@ -133,8 +206,7 @@ export default function AdminProductsPage() {
             autoSoldMin: 1,
             autoSoldMax: 10,
             autoReduceStock: true,
-            images: undefined,
-            reviewsJson: defaultReviews
+            images: undefined
           }
     );
     setOpen(true);
@@ -277,16 +349,173 @@ export default function AdminProductsPage() {
     updateVariant(variantId, { image: '' });
   };
 
+  const openReviewEditor = (review = null) => {
+    if (reviewAvatarFile?.previewUrl) URL.revokeObjectURL(reviewAvatarFile.previewUrl);
+    reviewMediaItems.forEach((item) => {
+      if (item.source === 'new' && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+    });
+
+    setEditingReview(review);
+    setReviewAvatarFile(null);
+    setReviewMediaUploadList([]);
+    setReviewMediaItems(
+      (review?.media || []).map((item) => ({
+        ...item,
+        id: item.id || `existing-media-${makeId('media')}`,
+        source: item.source || 'existing',
+        url: assetUrl(item.url)
+      }))
+    );
+    reviewForm.setFieldsValue(
+      review || {
+        customerName: '',
+        rating: 5,
+        content: '',
+        isVisible: true,
+        reviewDate: new Date().toISOString().slice(0, 10)
+      }
+    );
+    setReviewEditorOpen(true);
+  };
+
+  const handleReviewAvatarChange = (fileList) => {
+    const file = fileList[0];
+    if (reviewAvatarFile?.previewUrl) URL.revokeObjectURL(reviewAvatarFile.previewUrl);
+    if (!file?.originFileObj) {
+      setReviewAvatarFile(null);
+      return;
+    }
+    setReviewAvatarFile({
+      file,
+      previewUrl: URL.createObjectURL(file.originFileObj)
+    });
+  };
+
+  const handleReviewMediaChange = ({ fileList }) => {
+    setReviewMediaUploadList(fileList);
+    setReviewMediaItems((items) => {
+      const previousNewItems = items.filter((item) => item.source === 'new');
+      const nextFileUids = new Set(fileList.map((file) => file.uid));
+
+      previousNewItems.forEach((item) => {
+        if (!nextFileUids.has(item.uid) && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      });
+
+      const nextNewByUid = new Map(
+        fileList.map((file) => {
+          const previous = previousNewItems.find((item) => item.uid === file.uid);
+          if (previous) return [file.uid, { ...previous, file }];
+
+          const previewUrl = file.originFileObj ? URL.createObjectURL(file.originFileObj) : '';
+          return [
+            file.uid,
+            {
+              id: `media-${file.uid}`,
+              uid: file.uid,
+              source: 'new',
+              type: file.originFileObj?.type?.startsWith('video/') ? 'video' : 'image',
+              file,
+              previewUrl,
+              url: previewUrl
+            }
+          ];
+        })
+      );
+
+      const existingItems = items.filter((item) => item.source !== 'new');
+      return [...existingItems, ...fileList.map((file) => nextNewByUid.get(file.uid)).filter(Boolean)];
+    });
+  };
+
+  const removeReviewMedia = (mediaId) => {
+    setReviewMediaItems((items) => {
+      const target = items.find((item) => item.id === mediaId);
+      if (target?.source === 'new' && target.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      if (target?.uid) setReviewMediaUploadList((fileList) => fileList.filter((file) => file.uid !== target.uid));
+      return items.filter((item) => item.id !== mediaId);
+    });
+  };
+
+  const saveReview = async () => {
+    const values = await reviewForm.validateFields();
+    const reviewId = editingReview?._id || makeId('review');
+    const nextReview = {
+      ...(editingReview || {}),
+      ...values,
+      _id: reviewId,
+      rating: Number(values.rating || 5),
+      avatarUrl: editingReview?.avatarUrl || '',
+      avatarFile: reviewAvatarFile || editingReview?.avatarFile,
+      media: reviewMediaItems.map((item) => ({
+        ...item,
+        url: item.source === 'existing' ? item.url.replace(/^.*?(https?:\/\/)/, '$1') : item.url
+      })),
+      isVisible: values.isVisible !== false
+    };
+
+    setReviews((items) => {
+      if (editingReview) return items.map((item) => (item._id === editingReview._id ? nextReview : item));
+      return [nextReview, ...items];
+    });
+    setReviewEditorOpen(false);
+    setReviewAvatarFile(null);
+    setReviewMediaItems([]);
+    setReviewMediaUploadList([]);
+    reviewForm.resetFields();
+  };
+
+  const deleteReview = (reviewId) => {
+    setReviews((items) => {
+      const target = items.find((item) => item._id === reviewId);
+      if (target?.avatarFile?.previewUrl) URL.revokeObjectURL(target.avatarFile.previewUrl);
+      target?.media?.forEach((item) => {
+        if (item.source === 'new' && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      });
+      return items.filter((item) => item._id !== reviewId);
+    });
+  };
+
   const saveProduct = async (values) => {
     try {
       const payload = new FormData();
-      const reviews = JSON.parse(values.reviewsJson || '[]');
       Object.entries(values).forEach(([key, value]) => {
-        if (!['images', 'reviewsJson'].includes(key)) payload.append(key, value ?? '');
+        if (!['images'].includes(key)) payload.append(key, value ?? '');
       });
       payload.append('variantGroups', JSON.stringify(variantGroups));
       payload.append('variants', JSON.stringify(variants));
-      payload.append('reviews', JSON.stringify(reviews));
+
+      const reviewAvatarIds = [];
+      const reviewMediaRefs = [];
+      const reviewsPayload = reviews.map((review) => {
+        const newMediaIds = (review.media || []).filter((item) => item.source === 'new' && item.file?.originFileObj).map((item) => item.id);
+        if (review.avatarFile?.file?.originFileObj) reviewAvatarIds.push(review._id);
+        newMediaIds.forEach((mediaId) => reviewMediaRefs.push({ reviewId: review._id, mediaId }));
+        return {
+          _id: review._id,
+          customerName: review.customerName,
+          avatarUrl: review.avatarUrl,
+          rating: review.rating,
+          content: review.content,
+          isVisible: review.isVisible,
+          reviewDate: review.reviewDate,
+          media: (review.media || [])
+            .filter((item) => item.source !== 'new')
+            .map((item) => ({
+              url: item.url,
+              type: item.type === 'video' ? 'video' : 'image'
+            })),
+          newMediaIds
+        };
+      });
+      payload.append('reviews', JSON.stringify(reviewsPayload));
+      payload.append('newReviewAvatarIds', JSON.stringify(reviewAvatarIds));
+      payload.append('newReviewMediaRefs', JSON.stringify(reviewMediaRefs));
+      reviews.forEach((review) => {
+        if (review.avatarFile?.file?.originFileObj) payload.append('reviewAvatars', review.avatarFile.file.originFileObj);
+        (review.media || [])
+          .filter((item) => item.source === 'new' && item.file?.originFileObj)
+          .forEach((item) => payload.append('reviewMedia', item.file.originFileObj));
+      });
       payload.append('existingImages', JSON.stringify(imageItems.filter((item) => item.type === 'existing').map((item) => item.path)));
       payload.append(
         'imageOrder',
@@ -568,10 +797,180 @@ export default function AdminProductsPage() {
             </table>
           </div>
 
-          <Form.Item name="reviewsJson" label="Danh gia JSON">
-            <Input.TextArea rows={7} />
-          </Form.Item>
+          <div className="mb-4 rounded-sm border border-gray-200 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="m-0 text-lg font-semibold">Danh gia nguoi mua</h3>
+                <p className="m-0 text-sm text-gray-500">{reviews.length} danh gia. Quan ly bang popup, khong can nhap JSON.</p>
+              </div>
+              <Button onClick={() => setReviewsOpen(true)} icon={<Plus size={16} />}>
+                Quan ly danh gia
+              </Button>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {reviews.slice(0, 4).map((review) => (
+                <Tag key={review._id} color={review.isVisible ? 'green' : 'default'}>
+                  {review.customerName || 'Khach hang'} - {review.rating} sao
+                </Tag>
+              ))}
+              {reviews.length > 4 && <Tag>+{reviews.length - 4}</Tag>}
+            </div>
+          </div>
           <Button type="primary" htmlType="submit">Luu san pham</Button>
+        </Form>
+      </Modal>
+
+      <Modal
+        open={reviewsOpen}
+        onCancel={() => setReviewsOpen(false)}
+        title="Quan ly danh gia nguoi mua"
+        width={980}
+        footer={[
+          <Button key="close" onClick={() => setReviewsOpen(false)}>
+            Dong
+          </Button>,
+          <Button key="add" type="primary" icon={<Plus size={16} />} onClick={() => openReviewEditor()}>
+            Them danh gia
+          </Button>
+        ]}
+      >
+        <Table
+          rowKey="_id"
+          dataSource={reviews}
+          pagination={{ pageSize: 5, showSizeChanger: false }}
+          columns={[
+            {
+              title: 'Khach hang',
+              render: (_, review) => (
+                <Space>
+                  <Avatar src={review.avatarFile?.previewUrl || assetUrl(review.avatarUrl)}>
+                    {getInitials(review.customerName)}
+                  </Avatar>
+                  <div>
+                    <div className="font-medium">{review.customerName || 'Khach hang'}</div>
+                    <div className="text-xs text-gray-500">{review.reviewDate}</div>
+                  </div>
+                </Space>
+              )
+            },
+            { title: 'Sao', dataIndex: 'rating', render: (value) => <Rate disabled value={value} className="text-sm" /> },
+            { title: 'Noi dung', dataIndex: 'content', ellipsis: true },
+            {
+              title: 'Media',
+              render: (_, review) => (
+                <Space size={4}>
+                  {(review.media || []).slice(0, 4).map((item) => (
+                    <span key={item.id} className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-sm bg-gray-100">
+                      {isVideoMedia(item) ? (
+                        <Video size={16} className="text-gray-500" />
+                      ) : (
+                        <img src={item.previewUrl || assetUrl(item.url)} alt="" className="h-full w-full object-cover" />
+                      )}
+                    </span>
+                  ))}
+                  {(review.media || []).length > 4 && <Tag>+{review.media.length - 4}</Tag>}
+                </Space>
+              )
+            },
+            { title: 'Hien thi', dataIndex: 'isVisible', render: (value) => <Tag color={value ? 'green' : 'default'}>{value ? 'Co' : 'An'}</Tag> },
+            {
+              title: 'Thao tac',
+              render: (_, review) => (
+                <Space>
+                  <Button size="small" onClick={() => openReviewEditor(review)}>Sua</Button>
+                  <Popconfirm title="Xoa danh gia?" onConfirm={() => deleteReview(review._id)}>
+                    <Button danger size="small">Xoa</Button>
+                  </Popconfirm>
+                </Space>
+              )
+            }
+          ]}
+        />
+      </Modal>
+
+      <Modal
+        open={reviewEditorOpen}
+        onCancel={() => setReviewEditorOpen(false)}
+        title={editingReview ? 'Sua danh gia' : 'Them danh gia'}
+        width={760}
+        okText="Luu danh gia"
+        cancelText="Huy"
+        onOk={saveReview}
+      >
+        <Form form={reviewForm} layout="vertical">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Form.Item name="customerName" label="Ten nguoi mua" rules={[{ required: true, message: 'Nhap ten nguoi mua' }]}>
+              <Input placeholder="VD: Minh Anh" />
+            </Form.Item>
+            <Form.Item name="reviewDate" label="Ngay danh gia">
+              <Input type="date" />
+            </Form.Item>
+            <Form.Item name="rating" label="So sao">
+              <Rate />
+            </Form.Item>
+            <Form.Item name="isVisible" valuePropName="checked">
+              <Checkbox>Hien thi danh gia</Checkbox>
+            </Form.Item>
+          </div>
+          <Form.Item name="content" label="Noi dung danh gia" rules={[{ required: true, message: 'Nhap noi dung danh gia' }]}>
+            <Input.TextArea rows={4} placeholder="Nhap noi dung danh gia cua khach" />
+          </Form.Item>
+          <div className="mb-4 grid gap-4 md:grid-cols-[180px_1fr]">
+            <div>
+              <label className="mb-2 block font-medium">Avatar khach hang</label>
+              <div className="mb-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gray-100">
+                {reviewAvatarFile?.previewUrl || editingReview?.avatarUrl ? (
+                  <img
+                    src={reviewAvatarFile?.previewUrl || assetUrl(editingReview.avatarUrl)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Avatar size={80}>{getInitials(reviewForm.getFieldValue('customerName'))}</Avatar>
+                )}
+              </div>
+              <Upload
+                beforeUpload={() => false}
+                maxCount={1}
+                accept="image/*"
+                showUploadList={false}
+                onChange={({ fileList }) => handleReviewAvatarChange(fileList)}
+              >
+                <Button icon={<UploadCloud size={16} />}>Upload avatar</Button>
+              </Upload>
+            </div>
+            <div>
+              <label className="mb-2 block font-medium">Anh / video danh gia</label>
+              <Upload
+                beforeUpload={() => false}
+                multiple
+                accept="image/*,video/*"
+                fileList={reviewMediaUploadList}
+                showUploadList={false}
+                onChange={handleReviewMediaChange}
+              >
+                <Button icon={<UploadCloud size={16} />}>Upload nhieu anh/video</Button>
+              </Upload>
+              <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {reviewMediaItems.map((item) => (
+                  <div key={item.id} className="group relative aspect-square overflow-hidden rounded-sm bg-gray-100">
+                    {isVideoMedia(item) ? (
+                      <video src={item.previewUrl || assetUrl(item.url)} className="h-full w-full object-cover" muted />
+                    ) : (
+                      <img src={item.previewUrl || assetUrl(item.url)} alt="" className="h-full w-full object-cover" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeReviewMedia(item.id)}
+                      className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-sm bg-white/90 text-red-600 shadow"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </Form>
       </Modal>
     </div>

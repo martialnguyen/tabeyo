@@ -29,7 +29,7 @@ export function uploadBufferToCloudinary(file, folder = 'tabeyo') {
       {
         folder,
         public_id: publicId,
-        resource_type: 'image',
+        resource_type: 'auto',
         overwrite: false
       },
       (error, result) => {

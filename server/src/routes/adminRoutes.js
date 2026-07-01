@@ -14,6 +14,8 @@ function parseBoolean(value) {
 async function normalizeProductPayload(body, files = []) {
   const productImageFiles = files.images || [];
   const variantImageFiles = files.variantImages || [];
+  const reviewAvatarFiles = files.reviewAvatars || [];
+  const reviewMediaFiles = files.reviewMedia || [];
   const hasExistingImages = Object.prototype.hasOwnProperty.call(body, 'existingImages');
   const existingImages = hasExistingImages
     ? JSON.parse(body.existingImages || '[]').filter((image) => typeof image === 'string' && image.trim())
@@ -29,12 +31,32 @@ async function normalizeProductPayload(body, files = []) {
     }))
   }));
   const newVariantImageIds = JSON.parse(body.newVariantImageIds || '[]');
-  const [productImageUrls, variantImageUrls] = await Promise.all([
+  const newReviewAvatarIds = JSON.parse(body.newReviewAvatarIds || '[]');
+  const newReviewMediaRefs = JSON.parse(body.newReviewMediaRefs || '[]');
+  const [productImageUrls, variantImageUrls, reviewAvatarUrls, reviewMediaUrls] = await Promise.all([
     uploadFilesToCloudinary(productImageFiles, 'tabeyo/products'),
-    uploadFilesToCloudinary(variantImageFiles, 'tabeyo/variants')
+    uploadFilesToCloudinary(variantImageFiles, 'tabeyo/variants'),
+    uploadFilesToCloudinary(reviewAvatarFiles, 'tabeyo/review-avatars'),
+    uploadFilesToCloudinary(reviewMediaFiles, 'tabeyo/review-media')
   ]);
   const variantImageMap = new Map(
     variantImageUrls.map((url, index) => [newVariantImageIds[index], url])
+  );
+  const reviewAvatarMap = new Map(
+    reviewAvatarUrls.map((url, index) => [newReviewAvatarIds[index], url])
+  );
+  const reviewMediaMap = new Map(
+    reviewMediaUrls.map((url, index) => {
+      const ref = newReviewMediaRefs[index] || {};
+      const file = reviewMediaFiles[index];
+      return [
+        `${ref.reviewId}:${ref.mediaId}`,
+        {
+          url,
+          type: file?.mimetype?.startsWith('video/') ? 'video' : 'image'
+        }
+      ];
+    })
   );
   const variants = JSON.parse(body.variants || '[]').map((variant) => ({
     _id: variant._id || randomUUID(),
@@ -46,16 +68,30 @@ async function normalizeProductPayload(body, files = []) {
     soldCount: Number(variant.soldCount || 0)
   }));
 
-  const reviews = JSON.parse(body.reviews || '[]').map((review) => ({
-    _id: review._id || randomUUID(),
-    customerName: review.customerName,
-    avatarUrl: review.avatarUrl || '',
-    rating: Number(review.rating || 5),
-    content: review.content || '',
-    images: review.images || [],
-    isVisible: review.isVisible !== false,
-    reviewDate: review.reviewDate || new Date()
-  }));
+  const reviews = JSON.parse(body.reviews || '[]').map((review) => {
+    const reviewId = review._id || randomUUID();
+    const existingMedia = (review.media || review.images || [])
+      .map((item) => {
+        if (typeof item === 'string') return { url: item, type: item.match(/\.(mp4|webm|mov)(\?|$)/i) ? 'video' : 'image' };
+        return { url: item.url || '', type: item.type === 'video' ? 'video' : 'image' };
+      })
+      .filter((item) => item.url);
+    const uploadedMedia = (review.newMediaIds || [])
+      .map((mediaId) => reviewMediaMap.get(`${reviewId}:${mediaId}`))
+      .filter(Boolean);
+
+    return {
+      _id: reviewId,
+      customerName: review.customerName,
+      avatarUrl: reviewAvatarMap.get(reviewId) || review.avatarUrl || '',
+      rating: Number(review.rating || 5),
+      content: review.content || '',
+      media: [...existingMedia, ...uploadedMedia],
+      images: [...existingMedia, ...uploadedMedia].filter((item) => item.type !== 'video').map((item) => item.url),
+      isVisible: review.isVisible !== false,
+      reviewDate: review.reviewDate || new Date()
+    };
+  });
 
   return {
     name: body.name,
@@ -137,7 +173,9 @@ router.get('/products', async (_req, res) => {
 
 const productUpload = upload.fields([
   { name: 'images', maxCount: 20 },
-  { name: 'variantImages', maxCount: 80 }
+  { name: 'variantImages', maxCount: 80 },
+  { name: 'reviewAvatars', maxCount: 100 },
+  { name: 'reviewMedia', maxCount: 300 }
 ]);
 
 router.post('/products', productUpload, async (req, res) => {
