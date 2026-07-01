@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Alert, Rate, Skeleton } from 'antd';
-import { Minus, Plus, ShoppingCart } from 'lucide-react';
+import { Alert, Rate, Skeleton, Upload, message } from 'antd';
+import { ImagePlus, Minus, Plus, ShoppingCart, UploadCloud, X } from 'lucide-react';
 import ShopHeader from '../components/ShopHeader.jsx';
 import { api, assetUrl } from '../api/client.js';
 
@@ -46,6 +46,15 @@ export default function ProductDetailPage() {
   const [mainImage, setMainImage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reviewName, setReviewName] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewContent, setReviewContent] = useState('');
+  const [reviewAvatar, setReviewAvatar] = useState(null);
+  const [reviewMedia, setReviewMedia] = useState([]);
+  const [reviewMediaFiles, setReviewMediaFiles] = useState([]);
+  const [reviewSubmitError, setReviewSubmitError] = useState('');
+  const reviewAvatarRef = useRef(null);
+  const reviewMediaRef = useRef([]);
 
   useEffect(() => {
     api
@@ -61,6 +70,23 @@ export default function ProductDetailPage() {
       .catch(() => setError('Khong tim thay san pham.'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    reviewAvatarRef.current = reviewAvatar;
+  }, [reviewAvatar]);
+
+  useEffect(() => {
+    reviewMediaRef.current = reviewMedia;
+  }, [reviewMedia]);
+
+  useEffect(() => {
+    return () => {
+      if (reviewAvatarRef.current?.previewUrl) URL.revokeObjectURL(reviewAvatarRef.current.previewUrl);
+      reviewMediaRef.current.forEach((item) => {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      });
+    };
+  }, []);
 
   const selectedVariant = useMemo(() => {
     return product?.variants?.find((variant) => variant._id === selectedVariantId);
@@ -99,6 +125,55 @@ export default function ProductDetailPage() {
   const buyNow = () => {
     if (!selectedVariantId || isOutOfStock) return;
     navigate(`/checkout/${product._id}?variant=${selectedVariantId}&qty=${quantity}`);
+  };
+
+  const handleReviewAvatarChange = ({ fileList }) => {
+    const file = fileList[0];
+    if (reviewAvatar?.previewUrl) URL.revokeObjectURL(reviewAvatar.previewUrl);
+    if (!file?.originFileObj) {
+      setReviewAvatar(null);
+      return;
+    }
+    setReviewAvatar({
+      file,
+      previewUrl: URL.createObjectURL(file.originFileObj)
+    });
+  };
+
+  const handleReviewMediaChange = ({ fileList }) => {
+    setReviewMediaFiles(fileList);
+    setReviewMedia((items) => {
+      const nextFileUids = new Set(fileList.map((file) => file.uid));
+      items.forEach((item) => {
+        if (!nextFileUids.has(item.uid) && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      });
+
+      return fileList.map((file) => {
+        const existing = items.find((item) => item.uid === file.uid);
+        if (existing) return existing;
+        const fileObject = file.originFileObj;
+        return {
+          uid: file.uid,
+          type: fileObject?.type?.startsWith('video/') ? 'video' : 'image',
+          previewUrl: fileObject ? URL.createObjectURL(fileObject) : ''
+        };
+      });
+    });
+  };
+
+  const removeReviewMedia = (uid) => {
+    setReviewMedia((items) => {
+      const target = items.find((item) => item.uid === uid);
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      return items.filter((item) => item.uid !== uid);
+    });
+    setReviewMediaFiles((items) => items.filter((item) => item.uid !== uid));
+  };
+
+  const submitReview = (event) => {
+    event.preventDefault();
+    setReviewSubmitError('Vui lòng thử lại');
+    message.error('Vui lòng thử lại');
   };
 
   if (loading) {
@@ -264,6 +339,84 @@ export default function ProductDetailPage() {
 
         <section className="mt-4 bg-white p-4">
           <h2 className="mb-3 text-lg font-semibold">Danh gia cua nguoi mua</h2>
+          <form onSubmit={submitReview} className="mb-5 rounded-sm border border-gray-200 bg-gray-50 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="m-0 text-base font-semibold">Viet danh gia cua ban</h3>
+                <p className="m-0 text-sm text-gray-500">Chia se trai nghiem va upload anh/video san pham.</p>
+              </div>
+              <Rate value={reviewRating} onChange={setReviewRating} />
+            </div>
+            <div className="grid gap-3 md:grid-cols-[160px_1fr]">
+              <div>
+                <label className="mb-2 block text-sm font-medium">Avatar</label>
+                <div className="mb-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white text-gray-500 ring-1 ring-gray-200">
+                  {reviewAvatar?.previewUrl ? (
+                    <img src={reviewAvatar.previewUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-semibold">{getInitials(reviewName)}</span>
+                  )}
+                </div>
+                <Upload beforeUpload={() => false} maxCount={1} accept="image/*" showUploadList={false} onChange={handleReviewAvatarChange}>
+                  <button type="button" className="inline-flex items-center gap-2 rounded-sm border border-gray-300 bg-white px-3 py-2 text-sm">
+                    <UploadCloud size={15} />
+                    Upload avatar
+                  </button>
+                </Upload>
+              </div>
+              <div className="space-y-3">
+                <input
+                  value={reviewName}
+                  onChange={(event) => setReviewName(event.target.value)}
+                  className="w-full rounded-sm border border-gray-300 bg-white px-3 py-2"
+                  placeholder="Ten nguoi danh gia"
+                />
+                <textarea
+                  value={reviewContent}
+                  onChange={(event) => setReviewContent(event.target.value)}
+                  className="min-h-24 w-full rounded-sm border border-gray-300 bg-white px-3 py-2"
+                  placeholder="Nhap noi dung danh gia"
+                />
+                <Upload
+                  beforeUpload={() => false}
+                  multiple
+                  accept="image/*,video/*"
+                  fileList={reviewMediaFiles}
+                  showUploadList={false}
+                  onChange={handleReviewMediaChange}
+                >
+                  <button type="button" className="inline-flex items-center gap-2 rounded-sm border border-gray-300 bg-white px-3 py-2 text-sm">
+                    <ImagePlus size={15} />
+                    Upload anh/video
+                  </button>
+                </Upload>
+                {reviewMedia.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                    {reviewMedia.map((item) => (
+                      <div key={item.uid} className="group relative aspect-square overflow-hidden rounded-sm bg-white ring-1 ring-gray-200">
+                        {item.type === 'video' ? (
+                          <video src={item.previewUrl} className="h-full w-full object-cover" muted />
+                        ) : (
+                          <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeReviewMedia(item.uid)}
+                          className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-sm bg-white/90 text-red-600 shadow"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {reviewSubmitError && <Alert type="error" showIcon message={reviewSubmitError} />}
+                <button type="submit" className="rounded-sm bg-brand-500 px-5 py-2 font-semibold text-white">
+                  Gui danh gia
+                </button>
+              </div>
+            </div>
+          </form>
           <div className="space-y-4">
             {product.reviews?.filter((review) => review.isVisible).map((review) => (
               <article key={review._id} className="flex gap-3 border-b border-gray-100 pb-4 last:border-b-0">
