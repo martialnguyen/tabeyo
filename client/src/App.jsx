@@ -9,6 +9,7 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 import AdminProductsPage from './pages/admin/AdminProductsPage.jsx';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage.jsx';
 import AdminPaymentPage from './pages/admin/AdminPaymentPage.jsx';
+import FloatingContact from './components/FloatingContact.jsx';
 
 function RequireAdmin({ children }) {
   const token = localStorage.getItem('adminToken');
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="payment" element={<AdminPaymentPage />} />
         </Route>
       </Routes>
+      <FloatingContact />
     </BrowserRouter>
   );
 }

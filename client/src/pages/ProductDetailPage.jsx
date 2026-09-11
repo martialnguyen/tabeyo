@@ -70,7 +70,7 @@ export default function ProductDetailPage() {
         setMainImage(firstAvailableVariant?.image || item.images?.[0] || '');
         setReviewPage(1);
       })
-      .catch(() => setError('Khong tim thay san pham.'))
+      .catch((apiError) => setError(apiError.response?.data?.message || 'Khong tim thay san pham.'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -188,7 +188,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-gray-100">
         <ShopHeader />
-        <main className="mx-auto max-w-7xl px-4 py-4">
+        <main className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4">
           <Skeleton active />
         </main>
       </div>
@@ -199,7 +199,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-gray-100">
         <ShopHeader />
-        <main className="mx-auto max-w-7xl px-4 py-4">
+        <main className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4">
           <Alert type="error" message={error || 'San pham khong ton tai'} />
         </main>
       </div>
@@ -207,24 +207,24 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-slate-100">
       <ShopHeader />
-      <main className="mx-auto max-w-7xl px-4 py-4">
-        <section className="grid gap-5 bg-white p-4 lg:grid-cols-[440px_1fr]">
+      <main className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4">
+        <section className="animate-fade-up grid gap-4 rounded-md bg-white p-3 shadow-sm sm:p-4 lg:grid-cols-[440px_1fr] lg:gap-5">
           <div>
-            <div className="aspect-square bg-gray-100">
+            <div className="product-image-focus aspect-square overflow-hidden rounded-md bg-gradient-to-br from-slate-50 to-slate-100">
               {mainImage ? (
                 <img src={assetUrl(mainImage)} alt={product.name} className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full items-center justify-center text-gray-400">No image</div>
               )}
             </div>
-            <div className="mt-3 grid grid-cols-5 gap-2">
+            <div className="mobile-scroll mt-3 flex gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0">
               {product.images?.map((image) => (
                 <button
                   key={image}
                   onClick={() => setMainImage(image)}
-                  className={`aspect-square border bg-gray-100 ${mainImage === image ? 'border-brand-500' : 'border-gray-200'}`}
+                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-gray-100 sm:h-auto sm:w-auto sm:aspect-square ${mainImage === image ? 'border-brand-500 ring-2 ring-brand-100' : 'border-gray-200'}`}
                 >
                   <img src={assetUrl(image)} alt="" className="h-full w-full object-cover" />
                 </button>
@@ -232,9 +232,9 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h1 className="m-0 text-2xl font-semibold text-gray-900">{product.name}</h1>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+          <div className="space-y-3 sm:space-y-4">
+            <h1 className="m-0 text-xl font-semibold leading-7 text-gray-900 sm:text-2xl">{product.name}</h1>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 sm:gap-3 sm:text-sm">
               <span className="flex items-center gap-2">
                 <Rate allowHalf disabled value={product.ratingAverage || 0} className="text-base" />
                 <b className="text-brand-600">{product.ratingAverage || 0}</b>
@@ -244,8 +244,8 @@ export default function ProductDetailPage() {
               <span>Ton kho {product.stock || 0}</span>
             </div>
 
-            <div className="bg-gray-50 p-4">
-              <span className="text-3xl font-bold text-brand-500">{money.format(product.price || 0)}</span>
+            <div className="rounded-md bg-gradient-to-r from-brand-50 to-slate-50 p-3 sm:p-4">
+              <span className="text-2xl font-extrabold text-brand-600 sm:text-3xl">{money.format(product.price || 0)}</span>
               {product.originalPrice > product.price && (
                 <span className="ml-3 text-gray-400 line-through">{money.format(product.originalPrice)}</span>
               )}
@@ -258,7 +258,7 @@ export default function ProductDetailPage() {
                   {product.variantGroups.map((group) => (
                     <div key={group._id}>
                       <p className="mb-2 text-sm text-gray-600">{group.name}</p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="mobile-scroll -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
                         {group.values.map((option) => {
                           const disabled = !isOptionAvailable(group.name, option.value);
                           return (
@@ -266,9 +266,9 @@ export default function ProductDetailPage() {
                               key={option._id}
                               disabled={disabled}
                               onClick={() => selectOption(group.name, option.value)}
-                              className={`rounded-sm border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 ${
+                              className={`shrink-0 rounded-sm border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 ${
                                 selectedOptions[group.name] === option.value
-                                  ? 'border-brand-500 bg-brand-50 text-brand-600'
+                                  ? 'border-brand-500 bg-brand-50 text-brand-700'
                                   : 'border-gray-300 bg-white'
                               }`}
                             >
@@ -281,7 +281,7 @@ export default function ProductDetailPage() {
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="mobile-scroll -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
                   {product.variants?.map((variant) => (
                     <button
                       key={variant._id}
@@ -291,8 +291,8 @@ export default function ProductDetailPage() {
                         setQuantity(1);
                         if (variant.image) setMainImage(variant.image);
                       }}
-                      className={`rounded-sm border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 ${
-                        selectedVariantId === variant._id ? 'border-brand-500 bg-brand-50 text-brand-600' : 'border-gray-300 bg-white'
+                      className={`shrink-0 rounded-sm border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 ${
+                        selectedVariantId === variant._id ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-300 bg-white'
                       }`}
                     >
                       {variant.label}
@@ -309,7 +309,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="font-medium">So luong</span>
               <div className="flex items-center border border-gray-300">
                 <button
@@ -332,7 +332,7 @@ export default function ProductDetailPage() {
             <button
               onClick={buyNow}
               disabled={isOutOfStock || !selectedVariantId}
-              className="inline-flex items-center gap-2 rounded-sm bg-brand-500 px-8 py-3 font-semibold text-white disabled:bg-gray-300"
+              className="cta-pulse inline-flex w-full items-center justify-center gap-2 rounded-md bg-brand-500 px-8 py-3 font-bold text-white shadow-lg shadow-blue-100 transition hover:bg-brand-600 disabled:bg-gray-300 disabled:shadow-none sm:w-auto"
             >
               <ShoppingCart size={20} />
               Mua ngay
@@ -340,14 +340,14 @@ export default function ProductDetailPage() {
           </div>
         </section>
 
-        <section className="mt-4 bg-white p-4">
+        <section className="animate-fade-up mt-3 rounded-md bg-white p-3 sm:mt-4 sm:p-4">
           <h2 className="mb-3 text-lg font-semibold">Mo ta san pham</h2>
           <p className="whitespace-pre-line text-gray-700">{product.description}</p>
         </section>
 
-        <section className="mt-4 flex flex-col bg-white p-4">
+        <section className="animate-fade-up mt-3 flex flex-col rounded-md bg-white p-3 sm:mt-4 sm:p-4">
           <h2 className="mb-3 text-lg font-semibold">Danh gia cua nguoi mua</h2>
-          <form onSubmit={submitReview} className="order-last mt-5 rounded-sm border border-gray-200 bg-gray-50 p-4">
+          <form onSubmit={submitReview} className="order-last mt-5 rounded-sm border border-gray-200 bg-gray-50 p-3 sm:p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="m-0 text-base font-semibold">Viet danh gia cua ban</h3>
@@ -419,7 +419,7 @@ export default function ProductDetailPage() {
                   </div>
                 )}
                 {reviewSubmitError && <Alert type="error" showIcon message={reviewSubmitError} />}
-                <button type="submit" className="rounded-sm bg-brand-500 px-5 py-2 font-semibold text-white">
+                <button type="submit" className="w-full rounded-sm bg-brand-500 px-5 py-2 font-semibold text-white sm:w-auto">
                   Gui danh gia
                 </button>
               </div>
@@ -446,7 +446,7 @@ export default function ProductDetailPage() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
                     <div>
                       <p className="m-0 font-medium">{review.customerName}</p>
                       <Rate disabled value={review.rating} className="text-sm" />
