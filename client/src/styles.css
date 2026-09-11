@@ -73,6 +73,15 @@ select {
   animation: contact-pop 0.55s ease-out both;
 }
 
+.floating-contact__button::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  z-index: -1;
+  border-radius: inherit;
+  opacity: 0;
+}
+
 .floating-contact__button:hover {
   color: #fff;
   filter: brightness(1.05);
@@ -106,7 +115,13 @@ select {
 }
 
 .floating-contact__button--zalo {
-  background: linear-gradient(135deg, #0068ff, #00a3ff);
+  background: #fff;
+  animation: contact-pop 0.55s ease-out both, zalo-bounce 2.15s ease-in-out 0.7s infinite;
+}
+
+.floating-contact__button--zalo::before {
+  background: rgba(0, 104, 255, 0.28);
+  animation: zalo-ripple 2.15s ease-out 0.7s infinite;
 }
 
 .floating-contact__button--phone {
@@ -116,6 +131,14 @@ select {
 
 .floating-contact__button--phone svg {
   animation: phone-ring 1.8s ease-in-out infinite;
+}
+
+.floating-contact__zalo-icon {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  object-fit: cover;
+  animation: zalo-wiggle 2.15s ease-in-out 0.7s infinite;
 }
 
 .tech-hero {
@@ -194,6 +217,38 @@ select {
   transform: translateX(-110%);
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
   animation: button-sheen 3.2s ease-in-out infinite;
+}
+
+.community-zalo-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.community-zalo-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.16), transparent);
+  animation: button-sheen 3.4s ease-in-out infinite;
+}
+
+.community-zalo-button__icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 999px;
+  box-shadow: 0 6px 14px rgba(0, 104, 255, 0.28);
+  animation: zalo-wiggle 2.15s ease-in-out 0.7s infinite;
+}
+
+.community-zalo-button__icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .stat-card,
@@ -423,6 +478,56 @@ select {
   }
   36% {
     transform: rotate(8deg);
+  }
+  48% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes zalo-ripple {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.86);
+  }
+  65%,
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+@keyframes zalo-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  12% {
+    transform: translateY(-3px) scale(1.04);
+  }
+  24% {
+    transform: translateY(0) scale(0.98);
+  }
+  36% {
+    transform: translateY(-2px) scale(1.02);
+  }
+  48% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes zalo-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  12% {
+    transform: rotate(-7deg);
+  }
+  24% {
+    transform: rotate(7deg);
+  }
+  36% {
+    transform: rotate(-4deg);
   }
   48% {
     transform: rotate(0deg);

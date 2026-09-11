@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Skeleton } from 'antd';
-import { BadgeCheck, BatteryCharging, Laptop, MonitorSmartphone, ShieldCheck, Smartphone, TabletSmartphone, Truck, Zap } from 'lucide-react';
+import { BadgeCheck, BatteryCharging, Laptop, MonitorSmartphone, ShieldCheck, Smartphone, TabletSmartphone, Truck, UsersRound, Zap } from 'lucide-react';
 import ShopHeader from '../components/ShopHeader.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import { api } from '../api/client.js';
@@ -12,6 +12,8 @@ const quickCategories = [
   { label: 'Phu kien', icon: BatteryCharging }
 ];
 
+const zaloCommunityUrl = 'https://zalo.me/g/gf5geklaz2wkqzlggosp';
+
 export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -19,6 +21,7 @@ export default function HomePage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const productsRef = useRef(null);
 
   useEffect(() => {
     api
@@ -40,11 +43,25 @@ export default function HomePage() {
     });
   }, [activeCategory, products, search]);
 
+  const hasSearch = search.trim().length > 0;
+
+  const handleSearch = (keyword) => {
+    setSearch(keyword);
+  };
+
+  useEffect(() => {
+    if (!hasSearch || typeof window === 'undefined' || window.innerWidth >= 768) return undefined;
+    const timer = window.setTimeout(() => {
+      productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 360);
+    return () => window.clearTimeout(timer);
+  }, [hasSearch, search]);
+
   return (
     <div className="min-h-screen bg-slate-100">
-      <ShopHeader search={search} onSearch={setSearch} />
+      <ShopHeader search={search} onSearch={handleSearch} />
       <main className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-5">
-        <section className="tech-hero overflow-hidden rounded-lg bg-ink-900 text-white shadow-xl">
+        <section className={`tech-hero overflow-hidden rounded-lg bg-ink-900 text-white shadow-xl ${hasSearch ? 'hidden md:block' : ''}`}>
           <div className="grid min-h-[300px] gap-5 px-4 py-6 sm:min-h-[340px] sm:px-5 sm:py-7 md:grid-cols-[1.1fr_0.9fr] md:px-9 md:py-9">
             <div className="animate-fade-up flex flex-col justify-center">
               <p className="hero-chip mb-3 inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-100 sm:text-xs">
@@ -65,6 +82,18 @@ export default function HomePage() {
                   <BadgeCheck size={18} className="text-emerald-300" />
                   Tu van chon may
                 </span>
+                <a
+                  href={zaloCommunityUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="community-zalo-button inline-flex items-center justify-center gap-2 rounded-md border border-sky-300/40 bg-white px-4 py-3 text-sm font-bold text-brand-700 no-underline shadow-lg shadow-blue-950/20 transition hover:border-sky-200 hover:bg-sky-50 hover:text-brand-700"
+                >
+                  <span className="community-zalo-button__icon">
+                    <img src="/zalo-contact.png" alt="" />
+                  </span>
+                  <UsersRound size={17} />
+                  Tham gia cong dong
+                </a>
               </div>
               <div className="mt-5 grid max-w-2xl grid-cols-3 gap-2 text-xs sm:mt-7 sm:gap-3 sm:text-sm">
                 <div className="stat-card rounded-md border border-white/10 bg-white/5 p-3">
@@ -112,7 +141,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-3 grid grid-cols-3 gap-2 sm:mt-4 sm:gap-3 md:grid-cols-3">
+        <section className={`mt-3 grid grid-cols-3 gap-2 sm:mt-4 sm:gap-3 md:grid-cols-3 ${hasSearch ? 'hidden sm:grid' : ''}`}>
           <div className="feature-card flex flex-col items-center gap-2 rounded-md bg-white p-3 text-center shadow-sm sm:flex-row sm:gap-3 sm:p-4 sm:text-left">
             <Truck className="shrink-0 text-brand-500" size={24} />
             <div>
@@ -136,7 +165,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="animate-fade-up mt-3 rounded-md bg-white p-3 shadow-sm sm:mt-4 sm:p-4">
+        <section className={`animate-fade-up mt-3 rounded-md bg-white p-3 shadow-sm sm:mt-4 sm:p-4 ${hasSearch ? 'hidden sm:block' : ''}`}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="m-0 text-base font-bold text-slate-900 sm:text-lg">Danh muc cong nghe</h2>
@@ -174,13 +203,27 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="products" className="mt-5">
+        <section id="products" ref={productsRef} className="scroll-mt-24 mt-3 sm:mt-5">
           <div className="mb-3 flex items-center justify-between rounded-md bg-white px-3 py-3 shadow-sm sm:px-4">
             <div>
-              <p className="m-0 text-xs font-bold uppercase tracking-wide text-brand-600">San pham noi bat</p>
-              <h2 className="m-0 text-lg font-extrabold text-slate-900 sm:text-xl">Goi y hom nay</h2>
+              <p className="m-0 text-xs font-bold uppercase tracking-wide text-brand-600">
+                {hasSearch ? 'Ket qua tim kiem' : 'San pham noi bat'}
+              </p>
+              <h2 className="m-0 text-lg font-extrabold text-slate-900 sm:text-xl">
+                {hasSearch ? `Tim thay ${filteredProducts.length} san pham` : 'Goi y hom nay'}
+              </h2>
             </div>
-            <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 sm:px-3 sm:text-sm">Deal dang chay</span>
+            {hasSearch ? (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 sm:px-3 sm:text-sm"
+              >
+                Xoa tim
+              </button>
+            ) : (
+              <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 sm:px-3 sm:text-sm">Deal dang chay</span>
+            )}
           </div>
           {error && <Alert type="error" message={error} className="mb-3" />}
           {loading ? (

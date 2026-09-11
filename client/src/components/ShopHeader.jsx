@@ -33,7 +33,7 @@ export default function ShopHeader({ search, onSearch }) {
             value={search || ''}
             onChange={(event) => onSearch?.(event.target.value)}
             placeholder="Tim iPad, laptop, dien thoai..."
-            className="ml-2 w-full border-0 bg-transparent text-sm outline-none"
+            className="ml-2 w-full border-0 bg-transparent text-base outline-none sm:text-sm"
           />
         </div>
         <Link to="/admin" className="hidden rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 no-underline transition hover:border-brand-500 hover:text-brand-600 md:block">
