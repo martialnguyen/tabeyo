@@ -70,7 +70,7 @@ export default function ProductDetailPage() {
         setMainImage(firstAvailableVariant?.image || item.images?.[0] || '');
         setReviewPage(1);
       })
-      .catch((apiError) => setError(apiError.response?.data?.message || 'Khong tim thay san pham.'))
+      .catch((apiError) => setError(apiError.response?.data?.message || 'Không tìm thấy sản phẩm.'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -200,7 +200,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-gray-100">
         <ShopHeader />
         <main className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4">
-          <Alert type="error" message={error || 'San pham khong ton tai'} />
+          <Alert type="error" message={error || 'Sản phẩm không tồn tại'} />
         </main>
       </div>
     );
@@ -239,9 +239,9 @@ export default function ProductDetailPage() {
                 <Rate allowHalf disabled value={product.ratingAverage || 0} className="text-base" />
                 <b className="text-brand-600">{product.ratingAverage || 0}</b>
               </span>
-              <span>{product.ratingCount || 0} danh gia</span>
-              <span>Da ban {product.soldCount || 0}</span>
-              <span>Ton kho {product.stock || 0}</span>
+              <span>{product.ratingCount || 0} đánh giá</span>
+              <span>Đã bán {product.soldCount || 0}</span>
+              <span>Tồn kho {product.stock || 0}</span>
             </div>
 
             <div className="rounded-md bg-gradient-to-r from-brand-50 to-slate-50 p-3 sm:p-4">
@@ -252,7 +252,7 @@ export default function ProductDetailPage() {
             </div>
 
             <div>
-              <p className="mb-2 font-medium">Phan loai</p>
+              <p className="mb-2 font-medium">Phân loại</p>
               {hasVariantGroups ? (
                 <div className="space-y-3">
                   {product.variantGroups.map((group) => (
@@ -296,21 +296,21 @@ export default function ProductDetailPage() {
                       }`}
                     >
                       {variant.label}
-                      <span className="ml-2 text-xs">Con {variant.stock}</span>
+                      <span className="ml-2 text-xs">Còn {variant.stock}</span>
                     </button>
                   ))}
                 </div>
               )}
               {selectedVariant && (
                 <p className="mt-2 text-sm text-gray-500">
-                  Da chon: {selectedVariant.label}. Da ban phan loai nay: {selectedVariant.soldCount || 0}. Ton kho phan loai:{' '}
+                  Đã chọn: {selectedVariant.label}. Đã bán phân loại này: {selectedVariant.soldCount || 0}. Tồn kho phân loại:{' '}
                   {selectedVariant.stock || 0}.
                 </p>
               )}
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <span className="font-medium">So luong</span>
+              <span className="font-medium">Số lượng</span>
               <div className="flex items-center border border-gray-300">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -326,7 +326,7 @@ export default function ProductDetailPage() {
                   <Plus size={16} />
                 </button>
               </div>
-              <span className="text-sm text-gray-500">{availableStock} san pham co san</span>
+              <span className="text-sm text-gray-500">{availableStock} sản phẩm có sẵn</span>
             </div>
 
             <button
@@ -341,17 +341,17 @@ export default function ProductDetailPage() {
         </section>
 
         <section className="animate-fade-up mt-3 rounded-md bg-white p-3 sm:mt-4 sm:p-4">
-          <h2 className="mb-3 text-lg font-semibold">Mo ta san pham</h2>
+          <h2 className="mb-3 text-lg font-semibold">Mô tả sản phẩm</h2>
           <p className="whitespace-pre-line text-gray-700">{product.description}</p>
         </section>
 
         <section className="animate-fade-up mt-3 flex flex-col rounded-md bg-white p-3 sm:mt-4 sm:p-4">
-          <h2 className="mb-3 text-lg font-semibold">Danh gia cua nguoi mua</h2>
+          <h2 className="mb-3 text-lg font-semibold">Đánh giá của người mua</h2>
           <form onSubmit={submitReview} className="order-last mt-5 rounded-sm border border-gray-200 bg-gray-50 p-3 sm:p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="m-0 text-base font-semibold">Viet danh gia cua ban</h3>
-                <p className="m-0 text-sm text-gray-500">Chia se trai nghiem va upload anh/video san pham.</p>
+                <h3 className="m-0 text-base font-semibold">Viết đánh giá của bạn</h3>
+                <p className="m-0 text-sm text-gray-500">Chia sẻ trải nghiệm và upload ảnh/video sản phẩm.</p>
               </div>
               <Rate value={reviewRating} onChange={setReviewRating} />
             </div>
@@ -377,13 +377,13 @@ export default function ProductDetailPage() {
                   value={reviewName}
                   onChange={(event) => setReviewName(event.target.value)}
                   className="w-full rounded-sm border border-gray-300 bg-white px-3 py-2"
-                  placeholder="Ten nguoi danh gia"
+                  placeholder="Tên người đánh giá"
                 />
                 <textarea
                   value={reviewContent}
                   onChange={(event) => setReviewContent(event.target.value)}
                   className="min-h-24 w-full rounded-sm border border-gray-300 bg-white px-3 py-2"
-                  placeholder="Nhap noi dung danh gia"
+                  placeholder="Nhập nội dung đánh giá"
                 />
                 <Upload
                   beforeUpload={() => false}
@@ -395,7 +395,7 @@ export default function ProductDetailPage() {
                 >
                   <button type="button" className="inline-flex items-center gap-2 rounded-sm border border-gray-300 bg-white px-3 py-2 text-sm">
                     <ImagePlus size={15} />
-                    Upload anh/video
+                    Upload ảnh/video
                   </button>
                 </Upload>
                 {reviewMedia.length > 0 && (
@@ -420,7 +420,7 @@ export default function ProductDetailPage() {
                 )}
                 {reviewSubmitError && <Alert type="error" showIcon message={reviewSubmitError} />}
                 <button type="submit" className="w-full rounded-sm bg-brand-500 px-5 py-2 font-semibold text-white sm:w-auto">
-                  Gui danh gia
+                  Gửi đánh giá
                 </button>
               </div>
             </div>
@@ -470,7 +470,7 @@ export default function ProductDetailPage() {
                 </div>
               </article>
             ))}
-            {!visibleReviews.length && <p className="text-gray-500">Chua co danh gia hien thi.</p>}
+            {!visibleReviews.length && <p className="text-gray-500">Chưa có đánh giá hiển thị.</p>}
             {visibleReviews.length > REVIEW_PAGE_SIZE && (
               <div className="flex justify-center pt-2">
                 <Pagination

@@ -8,16 +8,16 @@ export default function ShopHeader({ search, onSearch }) {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 text-xs">
           <span className="inline-flex items-center gap-2">
             <ShieldCheck size={14} className="text-emerald-300" />
-            Hang cong nghe chinh hang, tu van nhanh
+            Hàng công nghệ chính hãng, tư vấn nhanh
           </span>
           <span className="inline-flex items-center gap-5">
             <span className="inline-flex items-center gap-1.5">
               <Truck size={14} className="text-sky-300" />
-              Giao nhanh toan quoc
+              Giao nhanh toàn quốc
             </span>
             <span className="inline-flex items-center gap-1.5">
               <BadgeCheck size={14} className="text-amber-300" />
-              Bao hanh ro rang
+              Bảo hành rõ ràng
             </span>
           </span>
         </div>
@@ -32,7 +32,7 @@ export default function ShopHeader({ search, onSearch }) {
           <input
             value={search || ''}
             onChange={(event) => onSearch?.(event.target.value)}
-            placeholder="Tim iPad, laptop, dien thoai..."
+            placeholder="Tìm iPad, laptop, điện thoại..."
             className="ml-2 w-full border-0 bg-transparent text-base outline-none sm:text-sm"
           />
         </div>

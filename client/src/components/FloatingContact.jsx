@@ -10,13 +10,13 @@ export default function FloatingContact() {
   if (location.pathname.startsWith('/admin')) return null;
 
   return (
-    <div className="floating-contact" aria-label="Lien he nhanh">
+    <div className="floating-contact" aria-label="Liên hệ nhanh">
       <a
         href={`https://zalo.me/${zaloPhone.replace(/\D/g, '')}`}
         target="_blank"
         rel="noreferrer"
         className="floating-contact__button floating-contact__button--zalo"
-        aria-label="Lien he Zalo"
+        aria-label="Liên hệ Zalo"
       >
         <img src="/zalo-contact.png" alt="" className="floating-contact__zalo-icon" />
         <span>Zalo</span>
@@ -24,10 +24,10 @@ export default function FloatingContact() {
       <a
         href={`tel:${contactPhone.replace(/\s/g, '')}`}
         className="floating-contact__button floating-contact__button--phone"
-        aria-label="Goi dien"
+        aria-label="Gọi điện"
       >
         <Phone size={23} />
-        <span>Goi ngay</span>
+        <span>Gọi ngay</span>
       </a>
     </div>
   );

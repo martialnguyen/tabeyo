@@ -33,7 +33,7 @@ export default function CheckoutPage() {
         setProduct(productRes.data.product);
         setPayment(paymentRes.data.paymentSetting);
       })
-      .catch(() => setError('Khong tai duoc thong tin thanh toan.'));
+      .catch(() => setError('Không tải được thông tin thanh toán.'));
   }, [id]);
 
   const variant = useMemo(() => product?.variants?.find((item) => item._id === variantId), [product, variantId]);
@@ -44,7 +44,7 @@ export default function CheckoutPage() {
   const nextStep = (event) => {
     event.preventDefault();
     if (!form.customerName || !form.phone || !form.address) {
-      setError('Vui long nhap du ten, so dien thoai va dia chi.');
+      setError('Vui lòng nhập đủ tên, số điện thoại và địa chỉ.');
       return;
     }
     setError('');
@@ -70,7 +70,7 @@ export default function CheckoutPage() {
       });
       navigate(`/success/${res.data.order.orderCode}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Tao don hang that bai.');
+      setError(err.response?.data?.message || 'Tạo đơn hàng thất bại.');
     } finally {
       setSubmitting(false);
     }
@@ -81,7 +81,7 @@ export default function CheckoutPage() {
       <ShopHeader />
       <main className="mx-auto max-w-5xl px-4 py-4">
         <div className="bg-white p-4">
-          <Steps current={step} items={[{ title: 'Thong tin dat hang' }, { title: 'Thanh toan' }]} />
+          <Steps current={step} items={[{ title: 'Thông tin đặt hàng' }, { title: 'Thanh toán' }]} />
         </div>
         {error && <Alert type="error" message={error} className="mt-4" />}
         {product && variant && (
@@ -89,69 +89,69 @@ export default function CheckoutPage() {
             <section className="bg-white p-4">
               {step === 0 ? (
                 <form onSubmit={nextStep} className="space-y-4">
-                  <h1 className="text-xl font-semibold">Thong tin nguoi nhan</h1>
+                  <h1 className="text-xl font-semibold">Thông tin người nhận</h1>
                   <input
                     value={form.customerName}
                     onChange={(event) => updateForm('customerName', event.target.value)}
-                    placeholder="Ho ten"
+                    placeholder="Họ tên"
                     className="w-full rounded-sm border border-gray-300 px-3 py-2 outline-brand-500"
                   />
                   <input
                     value={form.phone}
                     onChange={(event) => updateForm('phone', event.target.value)}
-                    placeholder="So dien thoai"
+                    placeholder="Số điện thoại"
                     className="w-full rounded-sm border border-gray-300 px-3 py-2 outline-brand-500"
                   />
                   <Radio.Group value={form.addressType} onChange={(event) => updateForm('addressType', event.target.value)}>
-                    <Radio value="before_merge">Dia chi truoc sap nhap</Radio>
-                    <Radio value="after_merge">Dia chi sau sap nhap</Radio>
+                    <Radio value="before_merge">Địa chỉ trước sáp nhập</Radio>
+                    <Radio value="after_merge">Địa chỉ sau sáp nhập</Radio>
                   </Radio.Group>
                   <textarea
                     value={form.address}
                     onChange={(event) => updateForm('address', event.target.value)}
-                    placeholder="Dia chi chi tiet"
+                    placeholder="Địa chỉ chi tiết"
                     rows={4}
                     className="w-full rounded-sm border border-gray-300 px-3 py-2 outline-brand-500"
                   />
                   <textarea
                     value={form.note}
                     onChange={(event) => updateForm('note', event.target.value)}
-                    placeholder="Ghi chu don hang"
+                    placeholder="Ghi chú đơn hàng"
                     rows={3}
                     className="w-full rounded-sm border border-gray-300 px-3 py-2 outline-brand-500"
                   />
-                  <button className="rounded-sm bg-brand-500 px-6 py-3 font-semibold text-white">Tiep tuc thanh toan</button>
+                  <button className="rounded-sm bg-brand-500 px-6 py-3 font-semibold text-white">Tiếp tục thanh toán</button>
                 </form>
               ) : (
                 <div className="space-y-4">
-                  <h1 className="text-xl font-semibold">Chon phuong thuc thanh toan</h1>
+                  <h1 className="text-xl font-semibold">Chọn phương thức thanh toán</h1>
                   <Radio.Group value={form.paymentMethod} onChange={(event) => updateForm('paymentMethod', event.target.value)}>
                     <div className="space-y-3">
-                      <Radio value="cod">Thanh toan khi nhan hang - COD</Radio>
-                      <Radio value="qr">Thanh toan ngay bang QR</Radio>
+                      <Radio value="cod">Thanh toán khi nhận hàng - COD</Radio>
+                      <Radio value="qr">Thanh toán ngay bằng QR</Radio>
                     </div>
                   </Radio.Group>
                   {form.paymentMethod === 'qr' && payment && (
                     <div className="rounded-sm border border-brand-100 bg-brand-50 p-4">
                       {payment.qrImage && (
-                        <img src={assetUrl(payment.qrImage)} alt="QR thanh toan" className="mb-3 h-56 w-56 object-contain" />
+                        <img src={assetUrl(payment.qrImage)} alt="QR thanh toán" className="mb-3 h-56 w-56 object-contain" />
                       )}
                       <p className="m-0 font-semibold">{payment.bankName}</p>
                       <p className="m-0">STK: {payment.accountNumber}</p>
-                      <p className="m-0">Chu TK: {payment.accountHolder}</p>
-                      <p className="mt-2 text-sm text-gray-600">Noi dung: DH - {form.phone}</p>
+                      <p className="m-0">Chủ TK: {payment.accountHolder}</p>
+                      <p className="mt-2 text-sm text-gray-600">Nội dung: DH - {form.phone}</p>
                     </div>
                   )}
                   <div className="flex gap-3">
                     <button onClick={() => setStep(0)} className="rounded-sm border border-gray-300 px-6 py-3">
-                      Quay lai
+                      Quay lại
                     </button>
                     <button
                       onClick={createOrder}
                       disabled={submitting}
                       className="rounded-sm bg-brand-500 px-6 py-3 font-semibold text-white disabled:bg-gray-300"
                     >
-                      {form.paymentMethod === 'qr' ? 'Toi da thanh toan' : 'Dat hang COD'}
+                      {form.paymentMethod === 'qr' ? 'Tôi đã thanh toán' : 'Đặt hàng COD'}
                     </button>
                   </div>
                 </div>
@@ -159,12 +159,12 @@ export default function CheckoutPage() {
             </section>
 
             <aside className="h-fit bg-white p-4">
-              <h2 className="mb-3 text-lg font-semibold">Don hang</h2>
+              <h2 className="mb-3 text-lg font-semibold">Đơn hàng</h2>
               <p className="font-medium">{product.name}</p>
-              <p className="text-sm text-gray-500">Phan loai: {variant.label}</p>
-              <p className="text-sm text-gray-500">So luong: {quantity}</p>
+              <p className="text-sm text-gray-500">Phân loại: {variant.label}</p>
+              <p className="text-sm text-gray-500">Số lượng: {quantity}</p>
               <div className="mt-4 flex justify-between border-t pt-4 font-semibold">
-                <span>Tong tien</span>
+                <span>Tổng tiền</span>
                 <span className="text-brand-500">{money.format(total)}</span>
               </div>
             </aside>

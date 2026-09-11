@@ -20,20 +20,20 @@ export default function SuccessPage() {
       <main className="mx-auto max-w-3xl px-4 py-10">
         <section className="bg-white p-8 text-center">
           <CheckCircle2 size={64} className="mx-auto mb-4 text-green-600" />
-          <h1 className="text-2xl font-semibold">Dat hang thanh cong</h1>
-          <p className="text-gray-600">Ma don hang: <b>{orderCode}</b></p>
+          <h1 className="text-2xl font-semibold">Đặt hàng thành công</h1>
+          <p className="text-gray-600">Mã đơn hàng: <b>{orderCode}</b></p>
           {order && (
             <div className="mt-6 text-left">
-              <p><b>Nguoi nhan:</b> {order.customerName}</p>
-              <p><b>So dien thoai:</b> {order.phone}</p>
-              <p><b>Dia chi:</b> {order.address}</p>
-              <p><b>Thanh toan:</b> {order.paymentMethod === 'qr' ? 'QR' : 'COD'}</p>
-              <p><b>Trang thai:</b> {order.orderStatus}</p>
-              <p><b>Tong tien:</b> <span className="text-brand-500">{money.format(order.totalAmount)}</span></p>
+              <p><b>Người nhận:</b> {order.customerName}</p>
+              <p><b>Số điện thoại:</b> {order.phone}</p>
+              <p><b>Địa chỉ:</b> {order.address}</p>
+              <p><b>Thanh toán:</b> {order.paymentMethod === 'qr' ? 'QR' : 'COD'}</p>
+              <p><b>Trạng thái:</b> {order.orderStatus}</p>
+              <p><b>Tổng tiền:</b> <span className="text-brand-500">{money.format(order.totalAmount)}</span></p>
             </div>
           )}
           <Link to="/" className="mt-6 inline-block rounded-sm bg-brand-500 px-6 py-3 font-semibold text-white no-underline">
-            Tiep tuc mua hang
+            Tiếp tục mua hàng
           </Link>
         </section>
       </main>
