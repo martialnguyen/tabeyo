@@ -13,6 +13,12 @@ const quickCategories = [
 ];
 
 const zaloCommunityUrl = 'https://zalo.me/g/gf5geklaz2wkqzlggosp';
+const productsCacheKey = 'anipad.products.cache.v1';
+
+function applyProducts(list, setProducts, setCategories) {
+  setProducts(list);
+  setCategories([...new Set(list.map((item) => item.category).filter(Boolean))]);
+}
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
@@ -24,14 +30,32 @@ export default function HomePage() {
   const productsRef = useRef(null);
 
   useEffect(() => {
+    const cachedProducts = localStorage.getItem(productsCacheKey);
+    if (cachedProducts) {
+      try {
+        const parsedProducts = JSON.parse(cachedProducts);
+        if (Array.isArray(parsedProducts) && parsedProducts.length > 0) {
+          applyProducts(parsedProducts, setProducts, setCategories);
+          setLoading(false);
+        }
+      } catch {
+        localStorage.removeItem(productsCacheKey);
+      }
+    }
+
     api
       .get('/products')
       .then((res) => {
         const list = res.data.products || [];
-        setProducts(list);
-        setCategories([...new Set(list.map((item) => item.category).filter(Boolean))]);
+        applyProducts(list, setProducts, setCategories);
+        localStorage.setItem(productsCacheKey, JSON.stringify(list));
+        setError('');
       })
-      .catch((apiError) => setError(apiError.response?.data?.message || 'Không tải được sản phẩm. Hãy kiểm tra server NodeJS.'))
+      .catch((apiError) => {
+        if (!cachedProducts) {
+          setError(apiError.response?.data?.message || 'Không tải được sản phẩm. Hãy kiểm tra server NodeJS.');
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
