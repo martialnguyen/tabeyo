@@ -7,18 +7,10 @@ function makeId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-const defaultReviews = [
-  {
-    _id: makeId('review'),
-    customerName: 'Khach hang',
-    avatarUrl: '',
-    rating: 5,
-    content: 'San pham dep, giao nhanh.',
-    media: [],
-    isVisible: true,
-    reviewDate: new Date().toISOString().slice(0, 10)
-  }
-];
+// Tạm ẩn đánh giá trong admin. Đổi thành true nếu cần bật lại sau này.
+const SHOW_PRODUCT_REVIEWS = false;
+
+const defaultReviews = [];
 
 function buildVariantLabel(optionValues = {}) {
   return Object.values(optionValues).filter(Boolean).join(' / ');
@@ -199,8 +191,8 @@ export default function AdminProductsPage() {
             originalPrice: 0,
             description: '',
             soldCount: 0,
-            ratingAverage: 5,
-            ratingCount: 1,
+            ratingAverage: 0,
+            ratingCount: 0,
             isActive: true,
             autoSoldEnabled: true,
             autoSoldMin: 1,
@@ -618,12 +610,16 @@ export default function AdminProductsPage() {
             <Form.Item name="soldCount" label="Tong da ban">
               <InputNumber className="w-full" min={0} />
             </Form.Item>
-            <Form.Item name="ratingAverage" label="Diem danh gia">
-              <InputNumber className="w-full" min={0} max={5} step={0.1} />
-            </Form.Item>
-            <Form.Item name="ratingCount" label="So luot danh gia">
-              <InputNumber className="w-full" min={0} />
-            </Form.Item>
+            {SHOW_PRODUCT_REVIEWS && (
+              <>
+                <Form.Item name="ratingAverage" label="Diem danh gia">
+                  <InputNumber className="w-full" min={0} max={5} step={0.1} />
+                </Form.Item>
+                <Form.Item name="ratingCount" label="So luot danh gia">
+                  <InputNumber className="w-full" min={0} />
+                </Form.Item>
+              </>
+            )}
             <Form.Item name="images" label="Anh san pham">
               <Upload beforeUpload={() => false} multiple fileList={uploadFileList} onChange={handleUploadChange} showUploadList={false}>
                 <Button icon={<UploadCloud size={16} />}>Chon anh</Button>
@@ -797,31 +793,34 @@ export default function AdminProductsPage() {
             </table>
           </div>
 
-          <div className="mb-4 rounded-sm border border-gray-200 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="m-0 text-lg font-semibold">Danh gia nguoi mua</h3>
-                <p className="m-0 text-sm text-gray-500">{reviews.length} danh gia. Quan ly bang popup, khong can nhap JSON.</p>
+          {SHOW_PRODUCT_REVIEWS && (
+            <div className="mb-4 rounded-sm border border-gray-200 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="m-0 text-lg font-semibold">Danh gia nguoi mua</h3>
+                  <p className="m-0 text-sm text-gray-500">{reviews.length} danh gia. Quan ly bang popup, khong can nhap JSON.</p>
+                </div>
+                <Button onClick={() => setReviewsOpen(true)} icon={<Plus size={16} />}>
+                  Quan ly danh gia
+                </Button>
               </div>
-              <Button onClick={() => setReviewsOpen(true)} icon={<Plus size={16} />}>
-                Quan ly danh gia
-              </Button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {reviews.slice(0, 4).map((review) => (
+                  <Tag key={review._id} color={review.isVisible ? 'green' : 'default'}>
+                    {review.customerName || 'Khach hang'} - {review.rating} sao
+                  </Tag>
+                ))}
+                {reviews.length > 4 && <Tag>+{reviews.length - 4}</Tag>}
+              </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {reviews.slice(0, 4).map((review) => (
-                <Tag key={review._id} color={review.isVisible ? 'green' : 'default'}>
-                  {review.customerName || 'Khach hang'} - {review.rating} sao
-                </Tag>
-              ))}
-              {reviews.length > 4 && <Tag>+{reviews.length - 4}</Tag>}
-            </div>
-          </div>
+          )}
           <Button type="primary" htmlType="submit">Luu san pham</Button>
         </Form>
       </Modal>
 
-      <Modal
-        open={reviewsOpen}
+      {SHOW_PRODUCT_REVIEWS && (
+        <Modal
+          open={reviewsOpen}
         onCancel={() => setReviewsOpen(false)}
         title="Quan ly danh gia nguoi mua"
         width={980}
@@ -886,10 +885,12 @@ export default function AdminProductsPage() {
             }
           ]}
         />
-      </Modal>
+        </Modal>
+      )}
 
-      <Modal
-        open={reviewEditorOpen}
+      {SHOW_PRODUCT_REVIEWS && (
+        <Modal
+          open={reviewEditorOpen}
         onCancel={() => setReviewEditorOpen(false)}
         title={editingReview ? 'Sua danh gia' : 'Them danh gia'}
         width={760}
@@ -972,7 +973,8 @@ export default function AdminProductsPage() {
             </div>
           </div>
         </Form>
-      </Modal>
+        </Modal>
+      )}
     </div>
   );
 }

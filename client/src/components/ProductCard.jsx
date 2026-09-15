@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { assetUrl } from '../api/client.js';
 
 const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+// Tạm ẩn đánh giá ở client. Đổi thành true nếu cần bật lại sau này.
+const SHOW_PRODUCT_REVIEWS = false;
 
 export default function ProductCard({ product }) {
   const mainImage = product.images?.[0];
@@ -55,10 +57,12 @@ export default function ProductCard({ product }) {
           <span className="rounded bg-brand-50 px-1.5 py-0.5 text-[11px] font-medium text-brand-700 sm:text-xs">Đã bán {product.soldCount || 0}</span>
         </div>
         <div className="flex items-center justify-between text-xs text-slate-500">
-          <span className="flex items-center gap-1">
-            <Star size={14} fill="#f59e0b" className="text-amber-500" />
-            {product.ratingAverage || 0} ({product.ratingCount || 0})
-          </span>
+          {SHOW_PRODUCT_REVIEWS && (
+            <span className="flex items-center gap-1">
+              <Star size={14} fill="#f59e0b" className="text-amber-500" />
+              {product.ratingAverage || 0} ({product.ratingCount || 0})
+            </span>
+          )}
           <span>Còn {product.stock || 0}</span>
         </div>
       </div>

@@ -6,6 +6,8 @@ import ShopHeader from '../components/ShopHeader.jsx';
 import { api, assetUrl } from '../api/client.js';
 
 const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+// Tạm ẩn đánh giá ở client. Đổi thành true nếu cần bật lại sau này.
+const SHOW_PRODUCT_REVIEWS = false;
 const REVIEW_PAGE_SIZE = 5;
 
 function getInitials(name = '') {
@@ -235,11 +237,15 @@ export default function ProductDetailPage() {
           <div className="space-y-3 sm:space-y-4">
             <h1 className="m-0 text-xl font-semibold leading-7 text-gray-900 sm:text-2xl">{product.name}</h1>
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 sm:gap-3 sm:text-sm">
-              <span className="flex items-center gap-2">
-                <Rate allowHalf disabled value={product.ratingAverage || 0} className="text-base" />
-                <b className="text-brand-600">{product.ratingAverage || 0}</b>
-              </span>
-              <span>{product.ratingCount || 0} đánh giá</span>
+              {SHOW_PRODUCT_REVIEWS && (
+                <>
+                  <span className="flex items-center gap-2">
+                    <Rate allowHalf disabled value={product.ratingAverage || 0} className="text-base" />
+                    <b className="text-brand-600">{product.ratingAverage || 0}</b>
+                  </span>
+                  <span>{product.ratingCount || 0} đánh giá</span>
+                </>
+              )}
               <span>Đã bán {product.soldCount || 0}</span>
               <span>Tồn kho {product.stock || 0}</span>
             </div>
@@ -345,145 +351,147 @@ export default function ProductDetailPage() {
           <p className="whitespace-pre-line text-gray-700">{product.description}</p>
         </section>
 
-        <section className="animate-fade-up mt-3 flex flex-col rounded-md bg-white p-3 sm:mt-4 sm:p-4">
-          <h2 className="mb-3 text-lg font-semibold">Đánh giá của người mua</h2>
-          <form onSubmit={submitReview} className="order-last mt-5 rounded-sm border border-gray-200 bg-gray-50 p-3 sm:p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="m-0 text-base font-semibold">Viết đánh giá của bạn</h3>
-                <p className="m-0 text-sm text-gray-500">Chia sẻ trải nghiệm và upload ảnh/video sản phẩm.</p>
-              </div>
-              <Rate value={reviewRating} onChange={setReviewRating} />
-            </div>
-            <div className="grid gap-3 md:grid-cols-[160px_1fr]">
-              <div>
-                <label className="mb-2 block text-sm font-medium">Avatar</label>
-                <div className="mb-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white text-gray-500 ring-1 ring-gray-200">
-                  {reviewAvatar?.previewUrl ? (
-                    <img src={reviewAvatar.previewUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-sm font-semibold">{getInitials(reviewName)}</span>
-                  )}
+        {SHOW_PRODUCT_REVIEWS && (
+          <section className="animate-fade-up mt-3 flex flex-col rounded-md bg-white p-3 sm:mt-4 sm:p-4">
+            <h2 className="mb-3 text-lg font-semibold">Đánh giá của người mua</h2>
+            <form onSubmit={submitReview} className="order-last mt-5 rounded-sm border border-gray-200 bg-gray-50 p-3 sm:p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="m-0 text-base font-semibold">Viết đánh giá của bạn</h3>
+                  <p className="m-0 text-sm text-gray-500">Chia sẻ trải nghiệm và upload ảnh/video sản phẩm.</p>
                 </div>
-                <Upload beforeUpload={() => false} maxCount={1} accept="image/*" showUploadList={false} onChange={handleReviewAvatarChange}>
-                  <button type="button" className="inline-flex items-center gap-2 rounded-sm border border-gray-300 bg-white px-3 py-2 text-sm">
-                    <UploadCloud size={15} />
-                    Upload avatar
-                  </button>
-                </Upload>
+                <Rate value={reviewRating} onChange={setReviewRating} />
               </div>
-              <div className="space-y-3">
-                <input
-                  value={reviewName}
-                  onChange={(event) => setReviewName(event.target.value)}
-                  className="w-full rounded-sm border border-gray-300 bg-white px-3 py-2"
-                  placeholder="Tên người đánh giá"
-                />
-                <textarea
-                  value={reviewContent}
-                  onChange={(event) => setReviewContent(event.target.value)}
-                  className="min-h-24 w-full rounded-sm border border-gray-300 bg-white px-3 py-2"
-                  placeholder="Nhập nội dung đánh giá"
-                />
-                <Upload
-                  beforeUpload={() => false}
-                  multiple
-                  accept="image/*,video/*"
-                  fileList={reviewMediaFiles}
-                  showUploadList={false}
-                  onChange={handleReviewMediaChange}
-                >
-                  <button type="button" className="inline-flex items-center gap-2 rounded-sm border border-gray-300 bg-white px-3 py-2 text-sm">
-                    <ImagePlus size={15} />
-                    Upload ảnh/video
-                  </button>
-                </Upload>
-                {reviewMedia.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-                    {reviewMedia.map((item) => (
-                      <div key={item.uid} className="group relative aspect-square overflow-hidden rounded-sm bg-white ring-1 ring-gray-200">
-                        {item.type === 'video' ? (
-                          <video src={item.previewUrl} className="h-full w-full object-cover" muted />
-                        ) : (
-                          <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => removeReviewMedia(item.uid)}
-                          className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-sm bg-white/90 text-red-600 shadow"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
+              <div className="grid gap-3 md:grid-cols-[160px_1fr]">
+                <div>
+                  <label className="mb-2 block text-sm font-medium">Avatar</label>
+                  <div className="mb-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white text-gray-500 ring-1 ring-gray-200">
+                    {reviewAvatar?.previewUrl ? (
+                      <img src={reviewAvatar.previewUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-semibold">{getInitials(reviewName)}</span>
+                    )}
                   </div>
-                )}
-                {reviewSubmitError && <Alert type="error" showIcon message={reviewSubmitError} />}
-                <button type="submit" className="w-full rounded-sm bg-brand-500 px-5 py-2 font-semibold text-white sm:w-auto">
-                  Gửi đánh giá
-                </button>
-              </div>
-            </div>
-          </form>
-          <div className="space-y-4">
-            {pagedReviews.map((review) => (
-              <article key={review._id} className="flex gap-3 border-b border-gray-100 pb-4 last:border-b-0">
-                <div
-                  className="h-11 w-11 shrink-0 overflow-hidden rounded-full text-white"
-                  style={{ backgroundColor: getAvatarColor(review.customerName) }}
-                >
-                  {shouldUseRemoteAvatar(review.avatarUrl) ? (
-                    <img
-                      src={assetUrl(review.avatarUrl)}
-                      alt={review.customerName}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
-                      {getInitials(review.customerName)}
-                    </div>
-                  )}
+                  <Upload beforeUpload={() => false} maxCount={1} accept="image/*" showUploadList={false} onChange={handleReviewAvatarChange}>
+                    <button type="button" className="inline-flex items-center gap-2 rounded-sm border border-gray-300 bg-white px-3 py-2 text-sm">
+                      <UploadCloud size={15} />
+                      Upload avatar
+                    </button>
+                  </Upload>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
-                    <div>
-                      <p className="m-0 font-medium">{review.customerName}</p>
-                      <Rate disabled value={review.rating} className="text-sm" />
-                    </div>
-                    <span className="shrink-0 text-xs text-gray-500">{new Date(review.reviewDate).toLocaleDateString('vi-VN')}</span>
-                  </div>
-                  <p className="mt-2 text-gray-700">{review.content}</p>
-                  {getReviewMedia(review).length > 0 && (
-                    <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-                      {getReviewMedia(review).map((media, index) => (
-                        <div key={`${review._id}-${media.url}-${index}`} className="aspect-square overflow-hidden rounded-sm bg-gray-100">
-                          {media.type === 'video' ? (
-                            <video src={assetUrl(media.url)} controls className="h-full w-full object-cover" />
+                <div className="space-y-3">
+                  <input
+                    value={reviewName}
+                    onChange={(event) => setReviewName(event.target.value)}
+                    className="w-full rounded-sm border border-gray-300 bg-white px-3 py-2"
+                    placeholder="Tên người đánh giá"
+                  />
+                  <textarea
+                    value={reviewContent}
+                    onChange={(event) => setReviewContent(event.target.value)}
+                    className="min-h-24 w-full rounded-sm border border-gray-300 bg-white px-3 py-2"
+                    placeholder="Nhập nội dung đánh giá"
+                  />
+                  <Upload
+                    beforeUpload={() => false}
+                    multiple
+                    accept="image/*,video/*"
+                    fileList={reviewMediaFiles}
+                    showUploadList={false}
+                    onChange={handleReviewMediaChange}
+                  >
+                    <button type="button" className="inline-flex items-center gap-2 rounded-sm border border-gray-300 bg-white px-3 py-2 text-sm">
+                      <ImagePlus size={15} />
+                      Upload ảnh/video
+                    </button>
+                  </Upload>
+                  {reviewMedia.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                      {reviewMedia.map((item) => (
+                        <div key={item.uid} className="group relative aspect-square overflow-hidden rounded-sm bg-white ring-1 ring-gray-200">
+                          {item.type === 'video' ? (
+                            <video src={item.previewUrl} className="h-full w-full object-cover" muted />
                           ) : (
-                            <img src={assetUrl(media.url)} alt="" loading="lazy" className="h-full w-full object-cover" />
+                            <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
                           )}
+                          <button
+                            type="button"
+                            onClick={() => removeReviewMedia(item.uid)}
+                            className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-sm bg-white/90 text-red-600 shadow"
+                          >
+                            <X size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>
                   )}
+                  {reviewSubmitError && <Alert type="error" showIcon message={reviewSubmitError} />}
+                  <button type="submit" className="w-full rounded-sm bg-brand-500 px-5 py-2 font-semibold text-white sm:w-auto">
+                    Gửi đánh giá
+                  </button>
                 </div>
-              </article>
-            ))}
-            {!visibleReviews.length && <p className="text-gray-500">Chưa có đánh giá hiển thị.</p>}
-            {visibleReviews.length > REVIEW_PAGE_SIZE && (
-              <div className="flex justify-center pt-2">
-                <Pagination
-                  current={reviewPage}
-                  pageSize={REVIEW_PAGE_SIZE}
-                  total={visibleReviews.length}
-                  showSizeChanger={false}
-                  onChange={setReviewPage}
-                />
               </div>
-            )}
-          </div>
-        </section>
+            </form>
+            <div className="space-y-4">
+              {pagedReviews.map((review) => (
+                <article key={review._id} className="flex gap-3 border-b border-gray-100 pb-4 last:border-b-0">
+                  <div
+                    className="h-11 w-11 shrink-0 overflow-hidden rounded-full text-white"
+                    style={{ backgroundColor: getAvatarColor(review.customerName) }}
+                  >
+                    {shouldUseRemoteAvatar(review.avatarUrl) ? (
+                      <img
+                        src={assetUrl(review.avatarUrl)}
+                        alt={review.customerName}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
+                        {getInitials(review.customerName)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
+                      <div>
+                        <p className="m-0 font-medium">{review.customerName}</p>
+                        <Rate disabled value={review.rating} className="text-sm" />
+                      </div>
+                      <span className="shrink-0 text-xs text-gray-500">{new Date(review.reviewDate).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                    <p className="mt-2 text-gray-700">{review.content}</p>
+                    {getReviewMedia(review).length > 0 && (
+                      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                        {getReviewMedia(review).map((media, index) => (
+                          <div key={`${review._id}-${media.url}-${index}`} className="aspect-square overflow-hidden rounded-sm bg-gray-100">
+                            {media.type === 'video' ? (
+                              <video src={assetUrl(media.url)} controls className="h-full w-full object-cover" />
+                            ) : (
+                              <img src={assetUrl(media.url)} alt="" loading="lazy" className="h-full w-full object-cover" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </article>
+              ))}
+              {!visibleReviews.length && <p className="text-gray-500">Chưa có đánh giá hiển thị.</p>}
+              {visibleReviews.length > REVIEW_PAGE_SIZE && (
+                <div className="flex justify-center pt-2">
+                  <Pagination
+                    current={reviewPage}
+                    pageSize={REVIEW_PAGE_SIZE}
+                    total={visibleReviews.length}
+                    showSizeChanger={false}
+                    onChange={setReviewPage}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
