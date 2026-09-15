@@ -12,7 +12,7 @@ Website ban hang don gian lay cam hung tu marketplace:
 
 - Frontend: ReactJS, Vite, Tailwind CSS, Bootstrap, Ant Design.
 - Backend: NodeJS, ExpressJS, Firebase Admin SDK, Firestore.
-- Upload: Multer local uploads.
+- Upload: Cloudinary.
 - Scheduler: node-cron.
 
 ## Cai dat
@@ -60,10 +60,10 @@ npm run dev
 - Client: http://localhost:5173
 - Server: http://localhost:5000
 
-## Admin mac dinh
+## Admin cố định
 
 - URL: http://localhost:5173/admin/login
-- Email: admin@app.local
-- Mat khau: 123456
+- Email: anipad@gmail.com
+- Mật khẩu: ducan287
 
-Co the doi trong `server/.env`.
+Backend đang cố định tài khoản này trong route đăng nhập admin.

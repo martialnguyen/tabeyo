@@ -9,6 +9,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
 
   const logout = () => {
+    sessionStorage.removeItem('adminToken');
     localStorage.removeItem('adminToken');
     navigate('/admin/login');
   };
@@ -31,9 +32,9 @@ export default function AdminLayout() {
           selectedKeys={[selectedKey]}
           items={[
             { key: 'dashboard', icon: <LayoutDashboard size={18} />, label: <Link to="/admin">Dashboard</Link> },
-            { key: 'products', icon: <Boxes size={18} />, label: <Link to="/admin/products">San pham</Link> },
-            { key: 'orders', icon: <PackageCheck size={18} />, label: <Link to="/admin/orders">Don hang</Link> },
-            { key: 'payment', icon: <CreditCard size={18} />, label: <Link to="/admin/payment">QR thanh toan</Link> }
+            { key: 'products', icon: <Boxes size={18} />, label: <Link to="/admin/products">Sản phẩm</Link> },
+            { key: 'orders', icon: <PackageCheck size={18} />, label: <Link to="/admin/orders">Đơn hàng</Link> },
+            { key: 'payment', icon: <CreditCard size={18} />, label: <Link to="/admin/payment">QR thanh toán</Link> }
           ]}
         />
       </Sider>

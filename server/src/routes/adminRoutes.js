@@ -140,8 +140,8 @@ function resolveProductImages(payload, fallbackImages = []) {
 }
 
 router.post('/login', (req, res) => {
-  const email = process.env.ADMIN_EMAIL || 'admin@app.local';
-  const password = process.env.ADMIN_PASSWORD || '123456';
+  const email = 'anipad@gmail.com';
+  const password = 'ducan287';
   const token = process.env.ADMIN_TOKEN || 'dev-admin-token-change-me';
 
   if (req.body.email === email && req.body.password === password) {

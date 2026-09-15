@@ -12,7 +12,7 @@ import AdminPaymentPage from './pages/admin/AdminPaymentPage.jsx';
 import FloatingContact from './components/FloatingContact.jsx';
 
 function RequireAdmin({ children }) {
-  const token = localStorage.getItem('adminToken');
+  const token = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
   return token ? children : <Navigate to="/admin/login" replace />;
 }
 

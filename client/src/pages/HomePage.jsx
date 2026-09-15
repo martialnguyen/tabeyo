@@ -13,17 +13,15 @@ const quickCategories = [
 ];
 
 const zaloCommunityUrl = 'https://zalo.me/g/gf5geklaz2wkqzlggosp';
+const zaloConsultUrl = 'https://zalo.me/0866426854';
 const productsCacheKey = 'anipad.products.cache.v1';
 
-function applyProducts(list, setProducts, setCategories) {
+function applyProducts(list, setProducts) {
   setProducts(list);
-  setCategories([...new Set(list.map((item) => item.category).filter(Boolean))]);
 }
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [activeCategory, setActiveCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,7 +33,7 @@ export default function HomePage() {
       try {
         const parsedProducts = JSON.parse(cachedProducts);
         if (Array.isArray(parsedProducts) && parsedProducts.length > 0) {
-          applyProducts(parsedProducts, setProducts, setCategories);
+          applyProducts(parsedProducts, setProducts);
           setLoading(false);
         }
       } catch {
@@ -47,7 +45,7 @@ export default function HomePage() {
       .get('/products')
       .then((res) => {
         const list = res.data.products || [];
-        applyProducts(list, setProducts, setCategories);
+        applyProducts(list, setProducts);
         localStorage.setItem(productsCacheKey, JSON.stringify(list));
         setError('');
       })
@@ -61,11 +59,10 @@ export default function HomePage() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      const matchCategory = activeCategory === 'all' || product.category === activeCategory;
       const matchSearch = product.name.toLowerCase().includes(search.toLowerCase());
-      return matchCategory && matchSearch;
+      return matchSearch;
     });
-  }, [activeCategory, products, search]);
+  }, [products, search]);
 
   const hasSearch = search.trim().length > 0;
 
@@ -102,10 +99,15 @@ export default function HomePage() {
                 <a href="#products" className="cta-pulse rounded-md bg-brand-500 px-5 py-3 text-center text-sm font-bold text-white no-underline shadow-lg shadow-blue-950/30 transition hover:bg-brand-600">
                   Xem sản phẩm hot
                 </a>
-                <span className="inline-flex justify-center items-center gap-2 rounded-md border border-white/15 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/10">
+                <a
+                  href={zaloConsultUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-white/15 px-4 py-3 text-sm font-semibold text-slate-100 no-underline transition hover:border-white/35 hover:bg-white/10 hover:text-white"
+                >
                   <BadgeCheck size={18} className="text-emerald-300" />
                   Tư vấn chọn máy
-                </span>
+                </a>
                 <a
                   href={zaloCommunityUrl}
                   target="_blank"
@@ -207,23 +209,6 @@ export default function HomePage() {
                 </button>
               ))}
             </div>
-          </div>
-          <div className="mobile-scroll -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0">
-            <button
-              onClick={() => setActiveCategory('all')}
-              className={`shrink-0 rounded-md border px-4 py-2 text-sm font-medium ${activeCategory === 'all' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 bg-white text-slate-600'}`}
-            >
-              Tất cả
-            </button>
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                className={`shrink-0 rounded-md border px-4 py-2 text-sm font-medium ${activeCategory === category ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 bg-white text-slate-600'}`}
-              >
-                {category}
-              </button>
-            ))}
           </div>
         </section>
 

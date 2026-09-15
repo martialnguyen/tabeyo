@@ -13,8 +13,8 @@ Required environment variables:
 
 ```env
 CLIENT_URL=https://your-vercel-domain.vercel.app
-ADMIN_EMAIL=admin@app.local
-ADMIN_PASSWORD=change-this-password
+ADMIN_EMAIL=anipad@gmail.com
+ADMIN_PASSWORD=ducan287
 ADMIN_TOKEN=change-this-long-random-token
 CRON_SECRET=change-this-long-random-secret
 ENABLE_AUTO_SOLD=true
