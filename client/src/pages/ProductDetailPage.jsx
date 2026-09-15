@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Alert, Pagination, Rate, Skeleton, Upload, message } from 'antd';
-import { ImagePlus, Minus, Plus, ShoppingCart, UploadCloud, X } from 'lucide-react';
+import { ImagePlus, MessageCircle, Minus, Plus, ShoppingCart, UploadCloud, X } from 'lucide-react';
 import ShopHeader from '../components/ShopHeader.jsx';
 import { api, assetUrl } from '../api/client.js';
 
@@ -9,6 +9,7 @@ const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND
 // Tạm ẩn đánh giá ở client. Đổi thành true nếu cần bật lại sau này.
 const SHOW_PRODUCT_REVIEWS = false;
 const REVIEW_PAGE_SIZE = 5;
+const zaloConsultUrl = 'https://zalo.me/0866426854';
 
 function getInitials(name = '') {
   return name
@@ -335,14 +336,25 @@ export default function ProductDetailPage() {
               <span className="text-sm text-gray-500">{availableStock} sản phẩm có sẵn</span>
             </div>
 
-            <button
-              onClick={buyNow}
-              disabled={isOutOfStock || !selectedVariantId}
-              className="cta-pulse inline-flex w-full items-center justify-center gap-2 rounded-md bg-brand-500 px-8 py-3 font-bold text-white shadow-lg shadow-blue-100 transition hover:bg-brand-600 disabled:bg-gray-300 disabled:shadow-none sm:w-auto"
-            >
-              <ShoppingCart size={20} />
-              Mua ngay
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <button
+                onClick={buyNow}
+                disabled={isOutOfStock || !selectedVariantId}
+                className="cta-pulse inline-flex w-full items-center justify-center gap-2 rounded-md bg-brand-500 px-8 py-3 font-bold text-white shadow-lg shadow-blue-100 transition hover:bg-brand-600 disabled:bg-gray-300 disabled:shadow-none sm:w-auto"
+              >
+                <ShoppingCart size={20} />
+                Mua ngay
+              </button>
+              <a
+                href={zaloConsultUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-brand-500 bg-white px-8 py-3 font-bold text-brand-600 no-underline shadow-sm transition hover:bg-brand-50 hover:text-brand-700 sm:w-auto"
+              >
+                <MessageCircle size={20} />
+                Tư vấn ngay
+              </a>
+            </div>
           </div>
         </section>
 

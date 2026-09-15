@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage.jsx';
 import ProductDetailPage from './pages/ProductDetailPage.jsx';
 import CheckoutPage from './pages/CheckoutPage.jsx';
@@ -10,15 +10,19 @@ import AdminProductsPage from './pages/admin/AdminProductsPage.jsx';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage.jsx';
 import AdminPaymentPage from './pages/admin/AdminPaymentPage.jsx';
 import FloatingContact from './components/FloatingContact.jsx';
+import ShopFooter from './components/ShopFooter.jsx';
 
 function RequireAdmin({ children }) {
   const token = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
   return token ? children : <Navigate to="/admin/login" replace />;
 }
 
-export default function App() {
+function AppShell() {
+  const location = useLocation();
+  const isAdminPage = location.pathname.startsWith('/admin');
+
   return (
-    <BrowserRouter>
+    <>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
@@ -39,7 +43,16 @@ export default function App() {
           <Route path="payment" element={<AdminPaymentPage />} />
         </Route>
       </Routes>
+      {!isAdminPage && <ShopFooter />}
       <FloatingContact />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
     </BrowserRouter>
   );
 }
