@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Drawer, Select, Space, Table, Tag, message } from 'antd';
+import { Button, Drawer, Popconfirm, Select, Space, Table, Tag, message } from 'antd';
 import { api } from '../../api/client.js';
 
 const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
@@ -25,6 +25,13 @@ export default function AdminOrdersPage() {
   const updateStatus = async (id, orderStatus) => {
     await api.patch(`/admin/orders/${id}/status`, { orderStatus });
     message.success('Da cap nhat trang thai');
+    loadOrders();
+  };
+
+  const deleteOrder = async (id) => {
+    await api.delete(`/admin/orders/${id}`);
+    message.success('Da xoa don hang');
+    if (selectedOrder?._id === id) setSelectedOrder(null);
     loadOrders();
   };
 
@@ -64,6 +71,16 @@ export default function AdminOrdersPage() {
             render: (_, record) => (
               <Space>
                 <Button onClick={() => setSelectedOrder(record)}>Chi tiet</Button>
+                <Popconfirm
+                  title="Xoa don hang?"
+                  description="Don hang se bi xoa khoi he thong."
+                  okText="Xoa"
+                  cancelText="Huy"
+                  okButtonProps={{ danger: true }}
+                  onConfirm={() => deleteOrder(record._id)}
+                >
+                  <Button danger>Xoa</Button>
+                </Popconfirm>
               </Space>
             )
           }
@@ -90,6 +107,16 @@ export default function AdminOrdersPage() {
               ))}
             </div>
             <p><b>Tong tien:</b> <span className="text-brand-500">{money.format(selectedOrder.totalAmount)}</span></p>
+            <Popconfirm
+              title="Xoa don hang?"
+              description="Don hang se bi xoa khoi he thong."
+              okText="Xoa"
+              cancelText="Huy"
+              okButtonProps={{ danger: true }}
+              onConfirm={() => deleteOrder(selectedOrder._id)}
+            >
+              <Button danger block>Xoa don hang</Button>
+            </Popconfirm>
           </div>
         )}
       </Drawer>

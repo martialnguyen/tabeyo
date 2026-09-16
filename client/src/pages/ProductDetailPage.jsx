@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Alert, Pagination, Rate, Skeleton, Upload, message } from 'antd';
-import { ImagePlus, MessageCircle, Minus, Plus, ShoppingCart, UploadCloud, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImagePlus, MessageCircle, Minus, Plus, ShoppingCart, UploadCloud, X } from 'lucide-react';
 import ShopHeader from '../components/ShopHeader.jsx';
 import { api, assetUrl } from '../api/client.js';
 
@@ -48,6 +48,7 @@ export default function ProductDetailPage() {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState('');
+  const [imageSlideDirection, setImageSlideDirection] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reviewName, setReviewName] = useState('');
@@ -60,6 +61,7 @@ export default function ProductDetailPage() {
   const [reviewPage, setReviewPage] = useState(1);
   const reviewAvatarRef = useRef(null);
   const reviewMediaRef = useRef([]);
+  const imageSwipeRef = useRef({ x: 0, y: 0, active: false });
 
   useEffect(() => {
     api
@@ -98,7 +100,51 @@ export default function ProductDetailPage() {
     return product?.variants?.find((variant) => variant._id === selectedVariantId);
   }, [product, selectedVariantId]);
 
+  const imageList = useMemo(() => product?.images?.filter(Boolean) || [], [product]);
+
+  const currentImageIndex = useMemo(() => {
+    const index = imageList.findIndex((image) => image === mainImage);
+    return index >= 0 ? index : 0;
+  }, [imageList, mainImage]);
+
   const hasVariantGroups = Boolean(product?.variantGroups?.length);
+
+  const changeMainImage = (image, direction = '') => {
+    if (!image || image === mainImage) return;
+    setImageSlideDirection(direction);
+    setMainImage(image);
+  };
+
+  const showAdjacentImage = (direction) => {
+    if (imageList.length <= 1) return;
+    const nextIndex =
+      direction === 'next'
+        ? (currentImageIndex + 1) % imageList.length
+        : (currentImageIndex - 1 + imageList.length) % imageList.length;
+    changeMainImage(imageList[nextIndex], direction);
+  };
+
+  const handleImagePointerDown = (event) => {
+    if (imageList.length <= 1) return;
+    imageSwipeRef.current = { x: event.clientX, y: event.clientY, active: true };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handleImagePointerUp = (event) => {
+    const start = imageSwipeRef.current;
+    if (!start.active) return;
+    imageSwipeRef.current = { x: 0, y: 0, active: false };
+
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
+    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
+
+    showAdjacentImage(deltaX < 0 ? 'next' : 'prev');
+  };
+
+  const handleImagePointerCancel = () => {
+    imageSwipeRef.current = { x: 0, y: 0, active: false };
+  };
 
   const findVariantByOptions = (options) => {
     return product?.variants?.find((variant) =>
@@ -215,18 +261,52 @@ export default function ProductDetailPage() {
       <main className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4">
         <section className="animate-fade-up grid gap-4 rounded-md bg-white p-3 shadow-sm sm:p-4 lg:grid-cols-[440px_1fr] lg:gap-5">
           <div>
-            <div className="product-image-focus aspect-square overflow-hidden rounded-md bg-gradient-to-br from-slate-50 to-slate-100">
+            <div
+              className="product-image-focus image-swipe-area group aspect-square overflow-hidden rounded-md bg-gradient-to-br from-slate-50 to-slate-100"
+              onPointerDown={handleImagePointerDown}
+              onPointerUp={handleImagePointerUp}
+              onPointerCancel={handleImagePointerCancel}
+              onPointerLeave={handleImagePointerCancel}
+            >
               {mainImage ? (
-                <img src={assetUrl(mainImage)} alt={product.name} className="h-full w-full object-cover" />
+                <img
+                  key={mainImage}
+                  src={assetUrl(mainImage)}
+                  alt={product.name}
+                  className={`image-swipe-photo h-full w-full object-cover ${imageSlideDirection === 'next' ? 'image-swipe-photo--next' : ''} ${imageSlideDirection === 'prev' ? 'image-swipe-photo--prev' : ''}`}
+                  draggable={false}
+                  onAnimationEnd={() => setImageSlideDirection('')}
+                />
               ) : (
                 <div className="flex h-full items-center justify-center text-gray-400">No image</div>
               )}
+              {imageList.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => showAdjacentImage('prev')}
+                    className="image-swipe-button image-swipe-button--left"
+                    aria-label="Ảnh trước"
+                  >
+                    <ChevronLeft size={22} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => showAdjacentImage('next')}
+                    className="image-swipe-button image-swipe-button--right"
+                    aria-label="Ảnh tiếp theo"
+                  >
+                    <ChevronRight size={22} />
+                  </button>
+                  <div className="image-swipe-hint">Vuốt để xem ảnh</div>
+                </>
+              )}
             </div>
             <div className="mobile-scroll mt-3 flex gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0">
-              {product.images?.map((image) => (
+              {imageList.map((image) => (
                 <button
                   key={image}
-                  onClick={() => setMainImage(image)}
+                  onClick={() => changeMainImage(image, imageList.indexOf(image) > currentImageIndex ? 'next' : 'prev')}
                   className={`h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-gray-100 sm:h-auto sm:w-auto sm:aspect-square ${mainImage === image ? 'border-brand-500 ring-2 ring-brand-100' : 'border-gray-200'}`}
                 >
                   <img src={assetUrl(image)} alt="" className="h-full w-full object-cover" />

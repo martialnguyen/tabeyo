@@ -242,6 +242,15 @@ router.patch('/orders/:id/status', async (req, res) => {
   res.json({ order });
 });
 
+router.delete('/orders/:id', async (req, res) => {
+  const orderRef = collection('orders').doc(req.params.id);
+  const orderDoc = await orderRef.get();
+  if (!orderDoc.exists) return res.status(404).json({ message: 'Order not found' });
+
+  await orderRef.delete();
+  res.json({ ok: true });
+});
+
 router.get('/payment-settings', async (_req, res) => {
   const snapshot = await collection('paymentSettings').orderBy('updatedAt', 'desc').limit(1).get();
   const paymentSetting = snapshot.empty ? null : serializeDoc(snapshot.docs[0]);

@@ -331,12 +331,94 @@ select {
 }
 
 .product-image-focus {
+  position: relative;
   transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .product-image-focus:hover {
   transform: translateY(-2px);
   box-shadow: 0 20px 45px rgba(37, 99, 235, 0.13);
+}
+
+.image-swipe-area {
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.image-swipe-area:active {
+  cursor: grabbing;
+}
+
+.image-swipe-photo {
+  animation: image-swipe-fade 0.26s ease-out both;
+  pointer-events: none;
+}
+
+.image-swipe-photo--next {
+  animation-name: image-swipe-next;
+}
+
+.image-swipe-photo--prev {
+  animation-name: image-swipe-prev;
+}
+
+.image-swipe-button {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.48);
+  color: #fff;
+  opacity: 0;
+  transform: translateY(-50%) scale(0.92);
+  transition: opacity 0.22s ease, transform 0.22s ease, background-color 0.22s ease;
+}
+
+.image-swipe-button:hover {
+  background: rgba(37, 99, 235, 0.82);
+}
+
+.image-swipe-area:hover .image-swipe-button,
+.image-swipe-area:focus-within .image-swipe-button {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+.image-swipe-button--left {
+  left: 12px;
+}
+
+.image-swipe-button--right {
+  right: 12px;
+}
+
+.image-swipe-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 2;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.58);
+  padding: 6px 10px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  white-space: nowrap;
+}
+
+.image-swipe-area:hover .image-swipe-hint {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .shop-footer {
@@ -620,6 +702,39 @@ select {
   }
 }
 
+@keyframes image-swipe-fade {
+  from {
+    opacity: 0.72;
+    transform: scale(1.015);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes image-swipe-next {
+  from {
+    opacity: 0.72;
+    transform: translateX(24px) scale(1.015);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes image-swipe-prev {
+  from {
+    opacity: 0.72;
+    transform: translateX(-24px) scale(1.015);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
 @keyframes icon-pop {
   0%,
   100% {
@@ -777,6 +892,18 @@ select {
 
   .floating-contact__button span {
     display: none;
+  }
+
+  .image-swipe-button {
+    width: 34px;
+    height: 34px;
+    opacity: 0.82;
+    transform: translateY(-50%) scale(1);
+  }
+
+  .image-swipe-hint {
+    opacity: 0.85;
+    transform: translate(-50%, 0);
   }
 }
 
