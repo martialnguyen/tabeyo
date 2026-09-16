@@ -219,6 +219,37 @@ select {
   animation: button-sheen 3.2s ease-in-out infinite;
 }
 
+.consult-cta {
+  position: relative;
+  overflow: hidden;
+  animation: consult-float 2.8s ease-in-out infinite;
+}
+
+.consult-cta::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 0%, rgba(37, 99, 235, 0.18) 42%, rgba(14, 165, 233, 0.28) 50%, transparent 62%);
+  transform: translateX(-120%);
+  animation: consult-sheen 3.1s ease-in-out infinite;
+}
+
+.consult-cta > * {
+  position: relative;
+  z-index: 1;
+}
+
+.consult-cta svg {
+  animation: consult-icon 1.9s ease-in-out infinite;
+}
+
+.consult-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.18);
+}
+
 .community-zalo-button {
   position: relative;
   overflow: hidden;
@@ -549,6 +580,43 @@ select {
   70%,
   100% {
     transform: translateX(110%);
+  }
+}
+
+@keyframes consult-float {
+  0%,
+  100% {
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.1);
+  }
+  50% {
+    box-shadow: 0 18px 36px rgba(37, 99, 235, 0.18);
+  }
+}
+
+@keyframes consult-sheen {
+  0%,
+  46% {
+    transform: translateX(-120%);
+  }
+  72%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes consult-icon {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  18% {
+    transform: translateY(-1px) rotate(-8deg);
+  }
+  36% {
+    transform: translateY(0) rotate(7deg);
+  }
+  54% {
+    transform: translateY(-1px) rotate(0deg);
   }
 }
 

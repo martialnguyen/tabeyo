@@ -349,7 +349,7 @@ export default function ProductDetailPage() {
                 href={zaloConsultUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-brand-500 bg-white px-8 py-3 font-bold text-brand-600 no-underline shadow-sm transition hover:bg-brand-50 hover:text-brand-700 sm:w-auto"
+                className="consult-cta inline-flex w-full items-center justify-center gap-2 rounded-md border border-brand-500 bg-white px-8 py-3 font-bold text-brand-600 no-underline shadow-sm transition hover:bg-brand-50 hover:text-brand-700 sm:w-auto"
               >
                 <MessageCircle size={20} />
                 Tư vấn ngay

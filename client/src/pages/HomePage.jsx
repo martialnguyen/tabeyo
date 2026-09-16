@@ -26,6 +26,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const productsRef = useRef(null);
+  const mobileAutoScrollDoneRef = useRef(false);
 
   useEffect(() => {
     const cachedProducts = localStorage.getItem(productsCacheKey);
@@ -77,6 +78,21 @@ export default function HomePage() {
     }, 360);
     return () => window.clearTimeout(timer);
   }, [hasSearch, search]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || mobileAutoScrollDoneRef.current || hasSearch || loading) return undefined;
+
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!isMobile || reduceMotion) return undefined;
+
+    mobileAutoScrollDoneRef.current = true;
+    const timer = window.setTimeout(() => {
+      productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [hasSearch, loading]);
 
   return (
     <div className="min-h-screen bg-slate-100">
