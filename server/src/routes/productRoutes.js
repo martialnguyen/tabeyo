@@ -2,13 +2,26 @@ import express from 'express';
 import { collection, serializeDoc } from '../utils/firestore.js';
 
 const router = express.Router();
-const PRODUCT_CACHE_TTL = 60 * 1000;
-const PRODUCT_STALE_TTL = 10 * 60 * 1000;
+const PRODUCT_CACHE_TTL = 8 * 1000;
+const PRODUCT_STALE_TTL = 90 * 1000;
 
 let productsCache = {
   data: null,
   updatedAt: 0
 };
+
+export function invalidateProductsCache() {
+  productsCache = {
+    data: null,
+    updatedAt: 0
+  };
+}
+
+function setNoStoreHeaders(res) {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+}
 
 async function loadActiveProducts() {
   const snapshot = await collection('products').orderBy('createdAt', 'desc').get();
@@ -16,11 +29,11 @@ async function loadActiveProducts() {
 }
 
 router.get('/', async (req, res) => {
+  setNoStoreHeaders(res);
   const now = Date.now();
   const cacheAge = now - productsCache.updatedAt;
 
   if (productsCache.data && cacheAge < PRODUCT_CACHE_TTL) {
-    res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=300');
     return res.json({ products: productsCache.data, cached: true });
   }
 
@@ -30,7 +43,6 @@ router.get('/', async (req, res) => {
       data: products,
       updatedAt: now
     };
-    res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=300');
     res.json({ products, cached: false });
   } catch (error) {
     console.error('Failed to load products:', error.message);
@@ -42,6 +54,7 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+  setNoStoreHeaders(res);
   try {
     const doc = await collection('products').doc(req.params.id).get();
     if (!doc.exists) return res.status(404).json({ message: 'Product not found' });

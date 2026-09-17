@@ -49,7 +49,12 @@ export default function AdminOrdersPage() {
           {
             title: 'Dia chi',
             render: (_, record) => (
-              <span>{record.addressType === 'before_merge' ? 'Truoc sap nhap' : 'Sau sap nhap'}</span>
+              <div className="max-w-72">
+                <div className="font-medium text-gray-900">{record.address || 'Chua co dia chi'}</div>
+                <div className="mt-1 text-xs text-gray-500">
+                  {record.addressType === 'before_merge' ? 'Truoc sap nhap' : 'Sau sap nhap'}
+                </div>
+              </div>
             )
           },
           {

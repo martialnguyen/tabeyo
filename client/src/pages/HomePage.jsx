@@ -14,10 +14,29 @@ const quickCategories = [
 
 const zaloCommunityUrl = 'https://zalo.me/g/gf5geklaz2wkqzlggosp';
 const zaloConsultUrl = 'https://zalo.me/0866426854';
-const productsCacheKey = 'anipad.products.cache.v1';
+const productsCacheKey = 'anipad.products.cache.v2';
+const oldProductsCacheKey = 'anipad.products.cache.v1';
 
 function applyProducts(list, setProducts) {
   setProducts(list);
+}
+
+function readProductsCache() {
+  const cachedProducts = localStorage.getItem(productsCacheKey);
+  if (!cachedProducts) return [];
+
+  try {
+    const parsedProducts = JSON.parse(cachedProducts);
+    return Array.isArray(parsedProducts?.products) ? parsedProducts.products : [];
+  } catch {
+    localStorage.removeItem(productsCacheKey);
+    return [];
+  }
+}
+
+function writeProductsCache(list) {
+  localStorage.setItem(productsCacheKey, JSON.stringify({ products: list, updatedAt: Date.now() }));
+  localStorage.removeItem(oldProductsCacheKey);
 }
 
 export default function HomePage() {
@@ -29,17 +48,10 @@ export default function HomePage() {
   const mobileAutoScrollDoneRef = useRef(false);
 
   useEffect(() => {
-    const cachedProducts = localStorage.getItem(productsCacheKey);
-    if (cachedProducts) {
-      try {
-        const parsedProducts = JSON.parse(cachedProducts);
-        if (Array.isArray(parsedProducts) && parsedProducts.length > 0) {
-          applyProducts(parsedProducts, setProducts);
-          setLoading(false);
-        }
-      } catch {
-        localStorage.removeItem(productsCacheKey);
-      }
+    const cachedProducts = readProductsCache();
+    if (cachedProducts.length > 0) {
+      applyProducts(cachedProducts, setProducts);
+      setLoading(false);
     }
 
     api
@@ -47,11 +59,11 @@ export default function HomePage() {
       .then((res) => {
         const list = res.data.products || [];
         applyProducts(list, setProducts);
-        localStorage.setItem(productsCacheKey, JSON.stringify(list));
+        writeProductsCache(list);
         setError('');
       })
       .catch((apiError) => {
-        if (!cachedProducts) {
+        if (!cachedProducts.length) {
           setError(apiError.response?.data?.message || 'Không tải được sản phẩm. Hãy kiểm tra server NodeJS.');
         }
       })

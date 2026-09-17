@@ -6,11 +6,71 @@ import { upload } from '../middleware/upload.js';
 import { uploadBufferToCloudinary, uploadFilesToCloudinary } from '../config/cloudinary.js';
 import { pruneOldVisits } from './visitRoutes.js';
 import { getVietnamDateKey } from '../utils/requestInfo.js';
+import { invalidateProductsCache } from './productRoutes.js';
 
 const router = express.Router();
 
 function parseBoolean(value) {
   return value === true || value === 'true' || value === 'on';
+}
+
+function extractProductIdFromPath(path = '') {
+  const cleanPath = String(path).split('?')[0];
+  const match = cleanPath.match(/^\/products\/([^/]+)/);
+  if (!match) return '';
+
+  try {
+    return decodeURIComponent(match[1]);
+  } catch (_error) {
+    return match[1];
+  }
+}
+
+async function enrichVisitsWithProducts(visits = []) {
+  const productIds = [...new Set(visits.map((visit) => extractProductIdFromPath(visit.path)).filter(Boolean))];
+  if (!productIds.length) {
+    return visits.map((visit) => ({
+      ...visit,
+      displayPath: visit.path === '/' ? 'Trang chủ' : visit.path
+    }));
+  }
+
+  const productRefs = productIds.map((productId) => collection('products').doc(productId));
+  const productDocs = await collection('products').firestore.getAll(...productRefs);
+  const productMap = new Map(
+    productDocs
+      .filter((doc) => doc.exists)
+      .map((doc) => {
+        const product = serializeDoc(doc);
+        return [
+          doc.id,
+          {
+            productId: doc.id,
+            productName: product.name || 'Sản phẩm chưa đặt tên',
+            productImage: product.images?.[0] || ''
+          }
+        ];
+      })
+  );
+
+  return visits.map((visit) => {
+    const productId = extractProductIdFromPath(visit.path);
+    if (!productId) {
+      return {
+        ...visit,
+        displayPath: visit.path === '/' ? 'Trang chủ' : visit.path
+      };
+    }
+
+    const product = productMap.get(productId);
+    return {
+      ...visit,
+      productId,
+      productName: product?.productName || 'Sản phẩm không còn tồn tại',
+      productImage: product?.productImage || '',
+      displayPath: product?.productName || visit.path
+    };
+  });
 }
 
 async function normalizeProductPayload(body, files = []) {
@@ -195,6 +255,7 @@ router.post('/products', productUpload, async (req, res) => {
     delete product.existingImages;
     delete product.imageOrder;
     await productRef.set(product);
+    invalidateProductsCache();
     res.status(201).json({ product: { _id: productRef.id, ...product } });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -220,6 +281,7 @@ router.put('/products/:id', productUpload, async (req, res) => {
     delete nextProduct.existingImages;
     delete nextProduct.imageOrder;
     await productRef.set(nextProduct, { merge: true });
+    invalidateProductsCache();
     res.json({ product: { _id: productRef.id, ...nextProduct } });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -228,6 +290,7 @@ router.put('/products/:id', productUpload, async (req, res) => {
 
 router.delete('/products/:id', async (req, res) => {
   await collection('products').doc(req.params.id).delete();
+  invalidateProductsCache();
   res.json({ ok: true });
 });
 
@@ -242,9 +305,10 @@ router.get('/traffic', async (_req, res) => {
 
   const dateKey = getVietnamDateKey();
   const snapshot = await collection('visits').where('dateKey', '==', dateKey).get();
-  const visits = snapshot.docs
+  const rawVisits = snapshot.docs
     .map(serializeDoc)
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+  const visits = await enrichVisitsWithProducts(rawVisits);
 
   const uniqueIps = new Set(visits.map((visit) => visit.ip).filter(Boolean)).size;
   const countBy = (field) =>
@@ -262,7 +326,7 @@ router.get('/traffic', async (_req, res) => {
     dateKey,
     totalVisits: visits.length,
     uniqueIps,
-    paths: countBy('path').slice(0, 10),
+    paths: countBy('displayPath').slice(0, 10),
     devices: countBy('deviceType'),
     browsers: countBy('browser'),
     visits

@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { collection, serializeDoc, sumVariantStock } from '../utils/firestore.js';
 import { randomInt } from '../utils/numbers.js';
+import { invalidateProductsCache } from '../routes/productRoutes.js';
 
 export async function runAutoSoldOnce() {
   const now = new Date();
@@ -55,6 +56,10 @@ export async function runAutoSoldOnce() {
       variantStock: variant.stock,
       productStock: product.stock
     });
+  }
+
+  if (results.length > 0) {
+    invalidateProductsCache();
   }
 
   return results;

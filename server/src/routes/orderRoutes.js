@@ -3,6 +3,7 @@ import { collection, serializeDoc, sumVariantStock } from '../utils/firestore.js
 import { createOrderCode } from '../utils/numbers.js';
 import { notifyDiscordNewOrder } from '../utils/discord.js';
 import { getRequestInfo } from '../utils/requestInfo.js';
+import { invalidateProductsCache } from './productRoutes.js';
 
 const router = express.Router();
 
@@ -90,6 +91,7 @@ router.post('/', async (req, res) => {
     });
 
     const order = { _id: orderRef.id, ...createdOrder };
+    invalidateProductsCache();
     await notifyDiscordNewOrder(order);
     res.status(201).json({ order });
   } catch (error) {
