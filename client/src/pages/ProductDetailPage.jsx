@@ -83,6 +83,8 @@ export default function ProductDetailPage() {
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [imageZoom, setImageZoom] = useState(1);
   const [imagePan, setImagePan] = useState({ x: 0, y: 0 });
+  const [inlineImageZoom, setInlineImageZoom] = useState(1);
+  const [inlineImagePan, setInlineImagePan] = useState({ x: 0, y: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reviewName, setReviewName] = useState('');
@@ -99,6 +101,9 @@ export default function ProductDetailPage() {
   const imagePanRef = useRef({ x: 0, y: 0, panX: 0, panY: 0, active: false });
   const imageViewerPointersRef = useRef(new Map());
   const imagePinchRef = useRef({ active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 });
+  const inlineImagePointersRef = useRef(new Map());
+  const inlineImagePanRef = useRef({ x: 0, y: 0, panX: 0, panY: 0, active: false });
+  const inlineImagePinchRef = useRef({ active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 });
 
   useEffect(() => {
     api
@@ -130,6 +135,12 @@ export default function ProductDetailPage() {
     imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
     imageViewerPointersRef.current.clear();
     imagePinchRef.current = { active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 };
+    setInlineImageZoom(1);
+    setInlineImagePan({ x: 0, y: 0 });
+    imageSwipeRef.current = { x: 0, y: 0, active: false };
+    inlineImagePointersRef.current.clear();
+    inlineImagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+    inlineImagePinchRef.current = { active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 };
   }, [mainImage]);
 
   useEffect(() => {
@@ -138,6 +149,13 @@ export default function ProductDetailPage() {
     imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
     imagePinchRef.current = { active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 };
   }, [imageZoom]);
+
+  useEffect(() => {
+    if (inlineImageZoom > 1) return;
+    setInlineImagePan({ x: 0, y: 0 });
+    inlineImagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+    inlineImagePinchRef.current = { active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 };
+  }, [inlineImageZoom]);
 
   useEffect(() => {
     if (!imageViewerOpen) return undefined;
@@ -191,6 +209,15 @@ export default function ProductDetailPage() {
     imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
     imageViewerPointersRef.current.clear();
     imagePinchRef.current = { active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 };
+  };
+
+  const resetInlineImageZoom = () => {
+    setInlineImageZoom(1);
+    setInlineImagePan({ x: 0, y: 0 });
+    imageSwipeRef.current = { x: 0, y: 0, active: false };
+    inlineImagePointersRef.current.clear();
+    inlineImagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+    inlineImagePinchRef.current = { active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 };
   };
 
   const openImageViewer = () => {
@@ -320,12 +347,131 @@ export default function ProductDetailPage() {
   };
 
   const handleImagePointerDown = (event) => {
-    if (imageList.length <= 1) return;
-    imageSwipeRef.current = { x: event.clientX, y: event.clientY, active: true };
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    inlineImagePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    const pointers = [...inlineImagePointersRef.current.values()];
+    if (pointers.length >= 2) {
+      const [first, second] = pointers;
+      const center = getPointerCenter(first, second);
+      inlineImagePinchRef.current = {
+        active: true,
+        distance: getPointerDistance(first, second),
+        zoom: inlineImageZoom,
+        centerX: center.x,
+        centerY: center.y,
+        panX: inlineImagePan.x,
+        panY: inlineImagePan.y
+      };
+      inlineImagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+      imageSwipeRef.current = { x: 0, y: 0, active: false };
+      return;
+    }
+
+    if (inlineImageZoom > 1) {
+      inlineImagePanRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+        panX: inlineImagePan.x,
+        panY: inlineImagePan.y,
+        active: true
+      };
+      imageSwipeRef.current = { x: 0, y: 0, active: false };
+      return;
+    }
+
+    if (imageList.length > 1) {
+      imageSwipeRef.current = { x: event.clientX, y: event.clientY, active: true };
+    }
+  };
+
+  const handleImagePointerMove = (event) => {
+    if (!inlineImagePointersRef.current.has(event.pointerId)) return;
+
+    inlineImagePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const pointers = [...inlineImagePointersRef.current.values()];
+
+    if (pointers.length >= 2 && inlineImagePinchRef.current.active) {
+      event.preventDefault();
+      const [first, second] = pointers;
+      const start = inlineImagePinchRef.current;
+      const distance = getPointerDistance(first, second);
+      const center = getPointerCenter(first, second);
+      const nextZoom = clampImageZoom(start.zoom * (distance / Math.max(start.distance, 1)));
+
+      setInlineImageZoom(nextZoom);
+      setInlineImagePan({
+        x: start.panX + center.x - start.centerX,
+        y: start.panY + center.y - start.centerY
+      });
+      return;
+    }
+
+    const start = inlineImagePanRef.current;
+    if (!start.active || inlineImageZoom <= 1) return;
+    event.preventDefault();
+    setInlineImagePan({
+      x: start.panX + event.clientX - start.x,
+      y: start.panY + event.clientY - start.y
+    });
   };
 
   const handleImagePointerUp = (event) => {
+    const wasPinching = inlineImagePinchRef.current.active || inlineImagePointersRef.current.size > 1;
+    inlineImagePointersRef.current.delete(event.pointerId);
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    }
+
+    const pointers = [...inlineImagePointersRef.current.entries()];
+    if (pointers.length >= 2) {
+      const [, first] = pointers[0];
+      const [, second] = pointers[1];
+      const center = getPointerCenter(first, second);
+      inlineImagePinchRef.current = {
+        active: true,
+        distance: getPointerDistance(first, second),
+        zoom: inlineImageZoom,
+        centerX: center.x,
+        centerY: center.y,
+        panX: inlineImagePan.x,
+        panY: inlineImagePan.y
+      };
+      imageSwipeRef.current = { x: 0, y: 0, active: false };
+      return;
+    }
+
+    if (wasPinching) {
+      inlineImagePinchRef.current = {
+        active: false,
+        distance: 0,
+        zoom: inlineImageZoom,
+        centerX: 0,
+        centerY: 0,
+        panX: inlineImagePan.x,
+        panY: inlineImagePan.y
+      };
+      imageSwipeRef.current = { x: 0, y: 0, active: false };
+
+      if (pointers.length === 1 && inlineImageZoom > 1) {
+        const [, pointer] = pointers[0];
+        inlineImagePanRef.current = {
+          x: pointer.x,
+          y: pointer.y,
+          panX: inlineImagePan.x,
+          panY: inlineImagePan.y,
+          active: true
+        };
+      }
+      return;
+    }
+
+    if (inlineImageZoom > 1) {
+      inlineImagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+      imageSwipeRef.current = { x: 0, y: 0, active: false };
+      return;
+    }
+
     const start = imageSwipeRef.current;
     if (!start.active) return;
     imageSwipeRef.current = { x: 0, y: 0, active: false };
@@ -337,7 +483,14 @@ export default function ProductDetailPage() {
     showAdjacentImage(deltaX < 0 ? 'next' : 'prev');
   };
 
-  const handleImagePointerCancel = () => {
+  const handleImagePointerCancel = (event) => {
+    if (event?.pointerId) {
+      inlineImagePointersRef.current.delete(event.pointerId);
+    } else {
+      inlineImagePointersRef.current.clear();
+    }
+    inlineImagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+    inlineImagePinchRef.current = { active: false, distance: 0, zoom: inlineImageZoom, centerX: 0, centerY: 0, panX: inlineImagePan.x, panY: inlineImagePan.y };
     imageSwipeRef.current = { x: 0, y: 0, active: false };
   };
 
@@ -453,15 +606,18 @@ export default function ProductDetailPage() {
   return (
     <div className="min-h-screen bg-slate-100">
       <ShopHeader />
-      <main className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4">
-        <section className="animate-fade-up grid gap-4 rounded-md bg-white p-3 shadow-sm sm:p-4 lg:grid-cols-[440px_1fr] lg:gap-5">
+      <main className="product-detail-page mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4">
+        <section className="product-detail-card animate-fade-up grid gap-4 rounded-md bg-white p-3 shadow-sm sm:p-4 lg:grid-cols-[440px_1fr] lg:gap-5">
           <div>
             <div
-              className="product-image-focus image-swipe-area group aspect-square overflow-hidden rounded-md bg-gradient-to-br from-slate-50 to-slate-100"
+              className={`product-image-focus image-swipe-area group aspect-square overflow-hidden rounded-md bg-gradient-to-br from-slate-50 to-slate-100 ${inlineImageZoom > 1 ? 'image-swipe-area--zoomed' : ''}`}
               onPointerDown={handleImagePointerDown}
+              onPointerMove={handleImagePointerMove}
               onPointerUp={handleImagePointerUp}
               onPointerCancel={handleImagePointerCancel}
-              onPointerLeave={handleImagePointerCancel}
+              onPointerLeave={(event) => {
+                if (event.pointerType === 'mouse') handleImagePointerCancel(event);
+              }}
               onDoubleClick={openImageViewer}
             >
               {mainImage ? (
@@ -469,8 +625,15 @@ export default function ProductDetailPage() {
                   key={mainImage}
                   src={assetUrl(mainImage)}
                   alt={product.name}
-                  className={`image-swipe-photo h-full w-full object-cover ${imageSlideDirection === 'next' ? 'image-swipe-photo--next' : ''} ${imageSlideDirection === 'prev' ? 'image-swipe-photo--prev' : ''}`}
+                  className={`product-main-image image-swipe-photo h-full w-full object-cover ${imageSlideDirection === 'next' ? 'image-swipe-photo--next' : ''} ${imageSlideDirection === 'prev' ? 'image-swipe-photo--prev' : ''}`}
                   draggable={false}
+                  style={
+                    inlineImageZoom > 1
+                      ? {
+                          transform: `translate3d(${inlineImagePan.x}px, ${inlineImagePan.y}px, 0) scale(${inlineImageZoom})`
+                        }
+                      : undefined
+                  }
                   onAnimationEnd={() => setImageSlideDirection('')}
                 />
               ) : (
@@ -480,6 +643,7 @@ export default function ProductDetailPage() {
                 <>
                   <button
                     type="button"
+                    onPointerDown={(event) => event.stopPropagation()}
                     onClick={() => showAdjacentImage('prev')}
                     className="image-swipe-button image-swipe-button--left"
                     aria-label="Ảnh trước"
@@ -488,17 +652,36 @@ export default function ProductDetailPage() {
                   </button>
                   <button
                     type="button"
+                    onPointerDown={(event) => event.stopPropagation()}
                     onClick={() => showAdjacentImage('next')}
                     className="image-swipe-button image-swipe-button--right"
                     aria-label="Ảnh tiếp theo"
                   >
                     <ChevronRight size={22} />
                   </button>
-                  <div className="image-swipe-hint">Vuốt để xem ảnh</div>
+                  <div className="image-swipe-hint">Vuốt / chụm 2 ngón để zoom</div>
                 </>
               )}
+              {inlineImageZoom > 1 && (
+                <button
+                  type="button"
+                  onClick={resetInlineImageZoom}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  className="image-inline-reset"
+                  aria-label="Đặt lại zoom ảnh"
+                >
+                  <RotateCcw size={15} />
+                  <span>{Math.round(inlineImageZoom * 100)}%</span>
+                </button>
+              )}
               {mainImage && (
-                <button type="button" onClick={openImageViewer} className="image-zoom-trigger" aria-label="Phóng to ảnh sản phẩm">
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={openImageViewer}
+                  className="image-zoom-trigger"
+                  aria-label="Phóng to ảnh sản phẩm"
+                >
                   <Maximize2 size={16} />
                   <span>Zoom ảnh</span>
                 </button>
@@ -517,8 +700,8 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          <div className="space-y-3 sm:space-y-4">
-            <h1 className="m-0 text-xl font-semibold leading-7 text-gray-900 sm:text-2xl">{product.name}</h1>
+          <div className="product-detail-info space-y-3 sm:space-y-4">
+            <h1 className="product-detail-title m-0 text-xl font-semibold leading-7 text-gray-900 sm:text-2xl">{product.name}</h1>
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 sm:gap-3 sm:text-sm">
               {SHOW_PRODUCT_REVIEWS && (
                 <>
@@ -533,10 +716,10 @@ export default function ProductDetailPage() {
               <span>Tồn kho {product.stock || 0}</span>
             </div>
 
-            <div className="rounded-md bg-gradient-to-r from-brand-50 to-slate-50 p-3 sm:p-4">
-              <span className="text-2xl font-extrabold text-brand-600 sm:text-3xl">{money.format(product.price || 0)}</span>
+            <div className="product-price-box rounded-md bg-gradient-to-r from-brand-50 to-slate-50 p-3 sm:p-4">
+              <span className="product-price-current text-2xl font-extrabold text-brand-600 sm:text-3xl">{money.format(product.price || 0)}</span>
               {product.originalPrice > product.price && (
-                <span className="ml-3 text-gray-400 line-through">{money.format(product.originalPrice)}</span>
+                <span className="product-price-old ml-3 text-gray-400 line-through">{money.format(product.originalPrice)}</span>
               )}
             </div>
 
@@ -598,7 +781,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="product-quantity-row flex flex-wrap items-center gap-3">
               <span className="font-medium">Số lượng</span>
               <div className="flex items-center border border-gray-300">
                 <button
@@ -618,7 +801,7 @@ export default function ProductDetailPage() {
               <span className="text-sm text-gray-500">{availableStock} sản phẩm có sẵn</span>
             </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="product-action-row flex flex-col gap-2 sm:flex-row sm:items-center">
               <button
                 onClick={buyNow}
                 disabled={isOutOfStock || !selectedVariantId}
@@ -640,7 +823,7 @@ export default function ProductDetailPage() {
           </div>
         </section>
 
-        <section className="animate-fade-up mt-3 rounded-md bg-white p-3 sm:mt-4 sm:p-4">
+        <section className="product-description-section animate-fade-up mt-3 rounded-md bg-white p-3 sm:mt-4 sm:p-4">
           <h2 className="mb-3 text-lg font-semibold">Mô tả sản phẩm</h2>
           <p className="whitespace-pre-line text-gray-700">{product.description}</p>
         </section>
