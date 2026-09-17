@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Avatar, Button, Checkbox, Form, Input, InputNumber, Modal, Popconfirm, Rate, Space, Switch, Table, Tag, Upload, message } from 'antd';
+import { Avatar, Button, Card, Checkbox, Form, Input, InputNumber, Modal, Popconfirm, Rate, Space, Switch, Table, Tag, Upload, message } from 'antd';
 import { GripVertical, ImagePlus, Plus, Trash2, UploadCloud, Video } from 'lucide-react';
 import { api, assetUrl } from '../../api/client.js';
 
@@ -549,48 +549,58 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="m-0 text-2xl font-semibold">Quan ly san pham</h1>
-        <Button type="primary" icon={<Plus size={16} />} onClick={() => openForm()}>
-          Them san pham
+    <div className="admin-page space-y-4">
+      <div className="admin-page__heading">
+        <div>
+          <p className="m-0 text-xs font-bold uppercase tracking-wide text-brand-600">Kho hàng</p>
+          <h1 className="m-0 text-2xl font-bold text-slate-950">Quản lý sản phẩm</h1>
+          <p className="m-0 text-sm text-slate-500">Thêm sản phẩm, ảnh đại diện, phân loại và tồn kho theo từng máy.</p>
+        </div>
+        <Button type="primary" icon={<Plus size={16} />} onClick={() => openForm()} className="admin-mobile-full">
+          Thêm sản phẩm
         </Button>
       </div>
-      <Table
-        rowKey="_id"
-        dataSource={products}
-        scroll={{ x: 1100 }}
-        columns={[
-          {
-            title: 'Anh',
-            dataIndex: 'images',
-            render: (images) => images?.[0] && <img src={assetUrl(images[0])} alt="" className="h-14 w-14 object-cover" />
-          },
-          { title: 'Ten', dataIndex: 'name' },
-          { title: 'Danh muc', dataIndex: 'category' },
-          { title: 'Gia', dataIndex: 'price', render: (value) => Number(value).toLocaleString('vi-VN') },
-          { title: 'Da ban', dataIndex: 'soldCount' },
-          { title: 'Ton kho', dataIndex: 'stock' },
-          { title: 'Auto sold', dataIndex: 'autoSoldEnabled', render: (value) => <Tag color={value ? 'green' : 'default'}>{value ? 'Bat' : 'Tat'}</Tag> },
-          {
-            title: 'Thao tac',
-            render: (_, record) => (
-              <Space>
-                <Button onClick={() => openForm(record)}>Sua</Button>
-                <Popconfirm title="Xoa san pham?" onConfirm={() => deleteProduct(record._id)}>
-                  <Button danger>Xoa</Button>
-                </Popconfirm>
-              </Space>
-            )
-          }
-        ]}
-      />
+      <Card className="admin-table-card" bodyStyle={{ padding: 0 }}>
+        <Table
+          rowKey="_id"
+          dataSource={products}
+          scroll={{ x: 1120 }}
+          pagination={{ pageSize: 10, showSizeChanger: false }}
+          columns={[
+            {
+              title: 'Ảnh',
+              dataIndex: 'images',
+              width: 90,
+              render: (images) => images?.[0] && <img src={assetUrl(images[0])} alt="" className="h-14 w-14 rounded-xl object-cover" />
+            },
+            { title: 'Tên', dataIndex: 'name', width: 260 },
+            { title: 'Danh mục', dataIndex: 'category', width: 140 },
+            { title: 'Giá', dataIndex: 'price', width: 140, render: (value) => Number(value).toLocaleString('vi-VN') },
+            { title: 'Đã bán', dataIndex: 'soldCount', width: 100 },
+            { title: 'Tồn kho', dataIndex: 'stock', width: 100 },
+            { title: 'Auto sold', dataIndex: 'autoSoldEnabled', width: 120, render: (value) => <Tag color={value ? 'green' : 'default'}>{value ? 'Bật' : 'Tắt'}</Tag> },
+            {
+              title: 'Thao tác',
+              width: 170,
+              render: (_, record) => (
+                <Space>
+                  <Button onClick={() => openForm(record)}>Sửa</Button>
+                  <Popconfirm title="Xoá sản phẩm?" onConfirm={() => deleteProduct(record._id)}>
+                    <Button danger>Xoá</Button>
+                  </Popconfirm>
+                </Space>
+              )
+            }
+          ]}
+        />
+      </Card>
 
       <Modal
         open={open}
         onCancel={() => setOpen(false)}
-        title={editing ? 'Sua san pham' : 'Them san pham'}
-        width={1040}
+        title={editing ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}
+        width="min(1040px, calc(100vw - 18px))"
+        className="admin-product-modal"
         footer={null}
       >
         <Form form={form} layout="vertical" onFinish={saveProduct}>
@@ -814,7 +824,7 @@ export default function AdminProductsPage() {
               </div>
             </div>
           )}
-          <Button type="primary" htmlType="submit">Luu san pham</Button>
+          <Button type="primary" htmlType="submit" className="admin-mobile-full">Lưu sản phẩm</Button>
         </Form>
       </Modal>
 
@@ -823,7 +833,8 @@ export default function AdminProductsPage() {
           open={reviewsOpen}
         onCancel={() => setReviewsOpen(false)}
         title="Quan ly danh gia nguoi mua"
-        width={980}
+        width="min(980px, calc(100vw - 18px))"
+        className="admin-product-modal"
         footer={[
           <Button key="close" onClick={() => setReviewsOpen(false)}>
             Dong
@@ -893,7 +904,8 @@ export default function AdminProductsPage() {
           open={reviewEditorOpen}
         onCancel={() => setReviewEditorOpen(false)}
         title={editingReview ? 'Sua danh gia' : 'Them danh gia'}
-        width={760}
+        width="min(760px, calc(100vw - 18px))"
+        className="admin-product-modal"
         okText="Luu danh gia"
         cancelText="Huy"
         onOk={saveReview}

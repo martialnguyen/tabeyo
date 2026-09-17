@@ -26,44 +26,50 @@ export default function AdminPaymentPage() {
     const file = values.qrImageFile?.fileList?.[0]?.originFileObj;
     if (file) payload.append('qrImage', file);
     await api.put('/admin/payment-settings', payload);
-    message.success('Da luu cau hinh QR');
+    message.success('Đã lưu cấu hình QR');
     loadPayment();
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-      <section className="bg-white p-4">
-        <h1 className="mb-4 text-2xl font-semibold">Cau hinh QR thanh toan</h1>
+    <div className="admin-page grid gap-4 xl:grid-cols-[1fr_340px]">
+      <section className="admin-detail-card">
+        <div className="mb-4">
+          <p className="m-0 text-xs font-bold uppercase tracking-wide text-brand-600">Thanh toán</p>
+          <h1 className="m-0 text-2xl font-bold text-slate-950">Cấu hình QR thanh toán</h1>
+          <p className="m-0 text-sm text-slate-500">Ảnh QR này sẽ hiển thị khi khách chọn thanh toán ngay.</p>
+        </div>
         <Form form={form} layout="vertical" onFinish={save}>
-          <Form.Item name="bankName" label="Ngan hang">
+          <Form.Item name="bankName" label="Ngân hàng">
             <Input />
           </Form.Item>
-          <Form.Item name="accountNumber" label="So tai khoan">
+          <Form.Item name="accountNumber" label="Số tài khoản">
             <Input />
           </Form.Item>
-          <Form.Item name="accountHolder" label="Chu tai khoan">
+          <Form.Item name="accountHolder" label="Chủ tài khoản">
             <Input />
           </Form.Item>
-          <Form.Item name="transferContentTemplate" label="Noi dung chuyen khoan mau">
+          <Form.Item name="transferContentTemplate" label="Nội dung chuyển khoản mẫu">
             <Input placeholder="DH-{orderCode}-{phone}" />
           </Form.Item>
-          <Form.Item name="isActive" label="Kich hoat QR" valuePropName="checked">
+          <Form.Item name="isActive" label="Kích hoạt QR" valuePropName="checked">
             <Switch />
           </Form.Item>
-          <Form.Item name="qrImageFile" label="Upload anh QR">
+          <Form.Item name="qrImageFile" label="Upload ảnh QR">
             <Upload beforeUpload={() => false} maxCount={1} listType="picture">
-              <Button icon={<UploadCloud size={16} />}>Chon anh QR</Button>
+              <Button icon={<UploadCloud size={16} />}>Chọn ảnh QR</Button>
             </Upload>
           </Form.Item>
-          <Button type="primary" htmlType="submit">Luu cau hinh</Button>
+          <Button type="primary" htmlType="submit" className="admin-mobile-full">
+            Lưu cấu hình
+          </Button>
         </Form>
       </section>
-      <aside className="h-fit bg-white p-4">
-        <h2 className="mb-3 text-lg font-semibold">QR hien tai</h2>
+      <aside className="admin-detail-card h-fit">
+        <h2 className="mb-3 text-lg font-semibold">QR hiện tại</h2>
         {payment?.qrImage ? (
-          <img src={assetUrl(payment.qrImage)} alt="QR hien tai" className="h-72 w-full object-contain" />
+          <img src={assetUrl(payment.qrImage)} alt="QR hiện tại" className="h-72 w-full rounded-2xl bg-slate-50 object-contain p-3" />
         ) : (
-          <p className="text-gray-500">Chua upload QR.</p>
+          <p className="text-gray-500">Chưa upload QR.</p>
         )}
         <div className="mt-3 text-sm text-gray-600">
           <p className="m-0">{payment?.bankName}</p>

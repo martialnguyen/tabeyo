@@ -256,8 +256,9 @@ export default function AdminOrdersPage() {
         open={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
         title="Chi tiết đơn hàng"
-        width={620}
+        width="min(620px, 100vw)"
         className="admin-order-drawer"
+        rootClassName="admin-order-drawer-root"
       >
         {selectedOrder && (
           <div className="space-y-4">

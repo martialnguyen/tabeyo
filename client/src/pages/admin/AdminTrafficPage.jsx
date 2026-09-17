@@ -66,30 +66,30 @@ export default function AdminTrafficPage() {
   const visits = data?.visits || [];
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="admin-page space-y-4">
+      <div className="admin-page__heading">
         <div>
           <h1 className="m-0 text-2xl font-semibold">Lưu lượng truy cập</h1>
           <p className="m-0 text-gray-500">Chỉ hiển thị dữ liệu trong ngày {data?.dateKey || ''}. Dữ liệu cũ sẽ tự động xoá.</p>
         </div>
-        <Button icon={<RefreshCw size={16} />} onClick={loadTraffic} loading={loading}>
+        <Button icon={<RefreshCw size={16} />} onClick={loadTraffic} loading={loading} className="admin-mobile-full">
           Tải lại
         </Button>
       </div>
 
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
-          <Card>
+          <Card className="admin-stat-card">
             <Statistic title="Lượt truy cập hôm nay" value={data?.totalVisits || 0} />
           </Card>
         </Col>
         <Col xs={24} md={8}>
-          <Card>
+          <Card className="admin-stat-card">
             <Statistic title="IP khác nhau" value={data?.uniqueIps || 0} />
           </Card>
         </Col>
         <Col xs={24} md={8}>
-          <Card>
+          <Card className="admin-stat-card">
             <Statistic title="Trang được xem" value={data?.paths?.length || 0} />
           </Card>
         </Col>
@@ -97,7 +97,7 @@ export default function AdminTrafficPage() {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
-          <Card title="Trang được xem nhiều">
+          <Card title="Trang được xem nhiều" className="admin-stat-card">
             <Space wrap>
               {(data?.paths || []).map((item) => (
                 <Tag key={item.name} color="blue">
@@ -109,7 +109,7 @@ export default function AdminTrafficPage() {
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="Thiết bị và trình duyệt">
+          <Card title="Thiết bị và trình duyệt" className="admin-stat-card">
             <div className="space-y-3">
               <Space wrap>
                 {(data?.devices || []).map((item) => (
@@ -130,7 +130,7 @@ export default function AdminTrafficPage() {
         </Col>
       </Row>
 
-      <Card title="Chi tiết truy cập trong ngày">
+      <Card title="Chi tiết truy cập trong ngày" className="admin-table-card" bodyStyle={{ padding: 0 }}>
         <Table
           rowKey="_id"
           loading={loading}
