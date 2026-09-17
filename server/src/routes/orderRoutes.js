@@ -2,11 +2,13 @@ import express from 'express';
 import { collection, serializeDoc, sumVariantStock } from '../utils/firestore.js';
 import { createOrderCode } from '../utils/numbers.js';
 import { notifyDiscordNewOrder } from '../utils/discord.js';
+import { getRequestInfo } from '../utils/requestInfo.js';
 
 const router = express.Router();
 
 router.post('/', async (req, res) => {
   const { customerName, phone, addressType, address, note, paymentMethod, items } = req.body;
+  const requestInfo = getRequestInfo(req);
 
   if (!customerName || !phone || !address || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ message: 'Missing order information' });
@@ -76,6 +78,11 @@ router.post('/', async (req, res) => {
         paymentMethod,
         paymentStatus: 'pending',
         orderStatus: 'pending',
+        customerIp: requestInfo.ip,
+        customerDevice: requestInfo.deviceType,
+        customerBrowser: requestInfo.browser,
+        customerOs: requestInfo.os,
+        customerUserAgent: requestInfo.userAgent,
         createdAt: new Date(),
         updatedAt: new Date()
       };

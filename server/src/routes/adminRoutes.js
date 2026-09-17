@@ -4,6 +4,8 @@ import { collection, serializeDoc, sumVariantStock } from '../utils/firestore.js
 import { adminAuth } from '../middleware/adminAuth.js';
 import { upload } from '../middleware/upload.js';
 import { uploadBufferToCloudinary, uploadFilesToCloudinary } from '../config/cloudinary.js';
+import { pruneOldVisits } from './visitRoutes.js';
+import { getVietnamDateKey } from '../utils/requestInfo.js';
 
 const router = express.Router();
 
@@ -233,6 +235,38 @@ router.get('/orders', async (_req, res) => {
   const snapshot = await collection('orders').orderBy('createdAt', 'desc').get();
   const orders = snapshot.docs.map(serializeDoc);
   res.json({ orders });
+});
+
+router.get('/traffic', async (_req, res) => {
+  await pruneOldVisits(true);
+
+  const dateKey = getVietnamDateKey();
+  const snapshot = await collection('visits').where('dateKey', '==', dateKey).get();
+  const visits = snapshot.docs
+    .map(serializeDoc)
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+
+  const uniqueIps = new Set(visits.map((visit) => visit.ip).filter(Boolean)).size;
+  const countBy = (field) =>
+    Object.entries(
+      visits.reduce((result, visit) => {
+        const key = visit[field] || 'Khac';
+        result[key] = (result[key] || 0) + 1;
+        return result;
+      }, {})
+    )
+      .map(([name, count]) => ({ name, count }))
+      .sort((left, right) => right.count - left.count);
+
+  res.json({
+    dateKey,
+    totalVisits: visits.length,
+    uniqueIps,
+    paths: countBy('path').slice(0, 10),
+    devices: countBy('deviceType'),
+    browsers: countBy('browser'),
+    visits
+  });
 });
 
 router.patch('/orders/:id/status', async (req, res) => {

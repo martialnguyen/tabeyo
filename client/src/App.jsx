@@ -9,8 +9,10 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 import AdminProductsPage from './pages/admin/AdminProductsPage.jsx';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage.jsx';
 import AdminPaymentPage from './pages/admin/AdminPaymentPage.jsx';
+import AdminTrafficPage from './pages/admin/AdminTrafficPage.jsx';
 import FloatingContact from './components/FloatingContact.jsx';
 import ShopFooter from './components/ShopFooter.jsx';
+import VisitTracker from './components/VisitTracker.jsx';
 
 function RequireAdmin({ children }) {
   const token = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
@@ -40,9 +42,11 @@ function AppShell() {
           <Route index element={<AdminDashboardPage />} />
           <Route path="products" element={<AdminProductsPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="traffic" element={<AdminTrafficPage />} />
           <Route path="payment" element={<AdminPaymentPage />} />
         </Route>
       </Routes>
+      {!isAdminPage && <VisitTracker />}
       {!isAdminPage && <ShopFooter />}
       <FloatingContact />
     </>

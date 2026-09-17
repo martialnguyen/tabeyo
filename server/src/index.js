@@ -9,6 +9,7 @@ import orderRoutes from './routes/orderRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import cronRoutes from './routes/cronRoutes.js';
+import visitRoutes from './routes/visitRoutes.js';
 import { startAutoSoldJob } from './jobs/autoSoldJob.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,6 +17,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 5000;
+app.set('trust proxy', true);
 
 const allowedOrigins = (process.env.CLIENT_URL || '*')
   .split(',')
@@ -44,6 +46,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment-settings', paymentRoutes);
+app.use('/api/visits', visitRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/cron', cronRoutes);
 

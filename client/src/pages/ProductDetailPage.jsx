@@ -1,7 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Alert, Pagination, Rate, Skeleton, Upload, message } from 'antd';
-import { ChevronLeft, ChevronRight, ImagePlus, MessageCircle, Minus, Plus, ShoppingCart, UploadCloud, X } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  Maximize2,
+  MessageCircle,
+  Minus,
+  Plus,
+  RotateCcw,
+  ShoppingCart,
+  UploadCloud,
+  X,
+  ZoomIn,
+  ZoomOut
+} from 'lucide-react';
 import ShopHeader from '../components/ShopHeader.jsx';
 import { api, assetUrl } from '../api/client.js';
 
@@ -49,6 +63,9 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState('');
   const [imageSlideDirection, setImageSlideDirection] = useState('');
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [imageZoom, setImageZoom] = useState(1);
+  const [imagePan, setImagePan] = useState({ x: 0, y: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reviewName, setReviewName] = useState('');
@@ -62,6 +79,7 @@ export default function ProductDetailPage() {
   const reviewAvatarRef = useRef(null);
   const reviewMediaRef = useRef([]);
   const imageSwipeRef = useRef({ x: 0, y: 0, active: false });
+  const imagePanRef = useRef({ x: 0, y: 0, panX: 0, panY: 0, active: false });
 
   useEffect(() => {
     api
@@ -86,6 +104,27 @@ export default function ProductDetailPage() {
   useEffect(() => {
     reviewMediaRef.current = reviewMedia;
   }, [reviewMedia]);
+
+  useEffect(() => {
+    setImageZoom(1);
+    setImagePan({ x: 0, y: 0 });
+    imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+  }, [mainImage]);
+
+  useEffect(() => {
+    if (imageZoom > 1) return;
+    setImagePan({ x: 0, y: 0 });
+    imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+  }, [imageZoom]);
+
+  useEffect(() => {
+    if (!imageViewerOpen) return undefined;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [imageViewerOpen]);
 
   useEffect(() => {
     return () => {
@@ -122,6 +161,60 @@ export default function ProductDetailPage() {
         ? (currentImageIndex + 1) % imageList.length
         : (currentImageIndex - 1 + imageList.length) % imageList.length;
     changeMainImage(imageList[nextIndex], direction);
+  };
+
+  const resetImageZoom = () => {
+    setImageZoom(1);
+    setImagePan({ x: 0, y: 0 });
+    imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+  };
+
+  const openImageViewer = () => {
+    if (!mainImage) return;
+    resetImageZoom();
+    setImageViewerOpen(true);
+  };
+
+  const closeImageViewer = () => {
+    setImageViewerOpen(false);
+    resetImageZoom();
+  };
+
+  const updateImageZoom = (updater) => {
+    setImageZoom((currentZoom) => {
+      const nextZoom = typeof updater === 'function' ? updater(currentZoom) : updater;
+      return Math.min(3, Math.max(1, Number(nextZoom.toFixed(2))));
+    });
+  };
+
+  const handleViewerWheel = (event) => {
+    event.preventDefault();
+    updateImageZoom((currentZoom) => currentZoom + (event.deltaY < 0 ? 0.18 : -0.18));
+  };
+
+  const handleViewerPointerDown = (event) => {
+    if (imageZoom <= 1) return;
+    imagePanRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      panX: imagePan.x,
+      panY: imagePan.y,
+      active: true
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handleViewerPointerMove = (event) => {
+    const start = imagePanRef.current;
+    if (!start.active || imageZoom <= 1) return;
+    setImagePan({
+      x: start.panX + event.clientX - start.x,
+      y: start.panY + event.clientY - start.y
+    });
+  };
+
+  const handleViewerPointerUp = () => {
+    imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
   };
 
   const handleImagePointerDown = (event) => {
@@ -267,6 +360,7 @@ export default function ProductDetailPage() {
               onPointerUp={handleImagePointerUp}
               onPointerCancel={handleImagePointerCancel}
               onPointerLeave={handleImagePointerCancel}
+              onDoubleClick={openImageViewer}
             >
               {mainImage ? (
                 <img
@@ -300,6 +394,12 @@ export default function ProductDetailPage() {
                   </button>
                   <div className="image-swipe-hint">Vuốt để xem ảnh</div>
                 </>
+              )}
+              {mainImage && (
+                <button type="button" onClick={openImageViewer} className="image-zoom-trigger" aria-label="Phóng to ảnh sản phẩm">
+                  <Maximize2 size={16} />
+                  <span>Zoom ảnh</span>
+                </button>
               )}
             </div>
             <div className="mobile-scroll mt-3 flex gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0">
@@ -583,6 +683,84 @@ export default function ProductDetailPage() {
               )}
             </div>
           </section>
+        )}
+        {imageViewerOpen && (
+          <div className="image-viewer" role="dialog" aria-modal="true" aria-label="Xem ảnh sản phẩm phóng to">
+            <div className="image-viewer__topbar">
+              <div className="image-viewer__counter">
+                Ảnh {currentImageIndex + 1}/{Math.max(imageList.length, 1)}
+              </div>
+              <div className="image-viewer__actions">
+                <button
+                  type="button"
+                  className="image-viewer__button"
+                  onClick={() => updateImageZoom((currentZoom) => currentZoom - 0.25)}
+                  aria-label="Thu nhỏ ảnh"
+                >
+                  <ZoomOut size={18} />
+                </button>
+                <span className="image-viewer__zoom-value">{Math.round(imageZoom * 100)}%</span>
+                <button
+                  type="button"
+                  className="image-viewer__button"
+                  onClick={() => updateImageZoom((currentZoom) => currentZoom + 0.25)}
+                  aria-label="Phóng to ảnh"
+                >
+                  <ZoomIn size={18} />
+                </button>
+                <button type="button" className="image-viewer__button" onClick={resetImageZoom} aria-label="Đặt lại ảnh">
+                  <RotateCcw size={18} />
+                </button>
+                <button type="button" className="image-viewer__button image-viewer__button--close" onClick={closeImageViewer} aria-label="Đóng">
+                  <X size={19} />
+                </button>
+              </div>
+            </div>
+
+            {imageList.length > 1 && (
+              <button
+                type="button"
+                className="image-viewer__nav image-viewer__nav--left"
+                onClick={() => showAdjacentImage('prev')}
+                aria-label="Ảnh trước"
+              >
+                <ChevronLeft size={28} />
+              </button>
+            )}
+
+            <div
+              className={`image-viewer__stage ${imageZoom > 1 ? 'image-viewer__stage--zoomed' : ''}`}
+              onWheel={handleViewerWheel}
+              onPointerDown={handleViewerPointerDown}
+              onPointerMove={handleViewerPointerMove}
+              onPointerUp={handleViewerPointerUp}
+              onPointerCancel={handleViewerPointerUp}
+              onDoubleClick={() => updateImageZoom(imageZoom > 1 ? 1 : 2)}
+            >
+              <img
+                src={assetUrl(mainImage)}
+                alt={product.name}
+                className="image-viewer__image"
+                draggable={false}
+                style={{
+                  transform: `translate3d(${imagePan.x}px, ${imagePan.y}px, 0) scale(${imageZoom})`
+                }}
+              />
+            </div>
+
+            {imageList.length > 1 && (
+              <button
+                type="button"
+                className="image-viewer__nav image-viewer__nav--right"
+                onClick={() => showAdjacentImage('next')}
+                aria-label="Ảnh tiếp theo"
+              >
+                <ChevronRight size={28} />
+              </button>
+            )}
+
+            <p className="image-viewer__hint">Lăn chuột hoặc bấm +/- để zoom. Kéo ảnh khi đang phóng to.</p>
+          </div>
         )}
       </main>
     </div>

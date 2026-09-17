@@ -52,6 +52,11 @@ export default function AdminOrdersPage() {
               <span>{record.addressType === 'before_merge' ? 'Truoc sap nhap' : 'Sau sap nhap'}</span>
             )
           },
+          {
+            title: 'IP',
+            dataIndex: 'customerIp',
+            render: (value) => <Tag color="geekblue">{value || 'Chua co'}</Tag>
+          },
           { title: 'Thanh toan', dataIndex: 'paymentMethod', render: (value) => <Tag>{value.toUpperCase()}</Tag> },
           { title: 'Tong tien', dataIndex: 'totalAmount', render: (value) => money.format(value) },
           {
@@ -93,6 +98,11 @@ export default function AdminOrdersPage() {
             <p><b>Ma don:</b> {selectedOrder.orderCode}</p>
             <p><b>Khach:</b> {selectedOrder.customerName}</p>
             <p><b>SDT:</b> {selectedOrder.phone}</p>
+            <p><b>IP dat hang:</b> {selectedOrder.customerIp || 'Chua co'}</p>
+            <p>
+              <b>Thiet bi:</b>{' '}
+              {[selectedOrder.customerDevice, selectedOrder.customerBrowser, selectedOrder.customerOs].filter(Boolean).join(' / ') || 'Chua co'}
+            </p>
             <p><b>Loai dia chi:</b> {selectedOrder.addressType === 'before_merge' ? 'Truoc sap nhap' : 'Sau sap nhap'}</p>
             <p><b>Dia chi:</b> {selectedOrder.address}</p>
             <p><b>Ghi chu:</b> {selectedOrder.note || 'Khong co'}</p>

@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Menu } from 'antd';
-import { Boxes, CreditCard, LayoutDashboard, LogOut, PackageCheck } from 'lucide-react';
+import { Boxes, CreditCard, LayoutDashboard, LogOut, PackageCheck, RadioTower } from 'lucide-react';
 
 const { Header, Content, Sider } = Layout;
 
@@ -18,9 +18,11 @@ export default function AdminLayout() {
     ? 'products'
     : location.pathname.includes('/admin/orders')
       ? 'orders'
-      : location.pathname.includes('/admin/payment')
-        ? 'payment'
-        : 'dashboard';
+      : location.pathname.includes('/admin/traffic')
+        ? 'traffic'
+        : location.pathname.includes('/admin/payment')
+          ? 'payment'
+          : 'dashboard';
 
   return (
     <Layout className="admin-shell min-h-screen">
@@ -34,6 +36,7 @@ export default function AdminLayout() {
             { key: 'dashboard', icon: <LayoutDashboard size={18} />, label: <Link to="/admin">Dashboard</Link> },
             { key: 'products', icon: <Boxes size={18} />, label: <Link to="/admin/products">Sản phẩm</Link> },
             { key: 'orders', icon: <PackageCheck size={18} />, label: <Link to="/admin/orders">Đơn hàng</Link> },
+            { key: 'traffic', icon: <RadioTower size={18} />, label: <Link to="/admin/traffic">Lưu lượng</Link> },
             { key: 'payment', icon: <CreditCard size={18} />, label: <Link to="/admin/payment">QR thanh toán</Link> }
           ]}
         />
