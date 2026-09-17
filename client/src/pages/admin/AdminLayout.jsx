@@ -27,7 +27,13 @@ export default function AdminLayout() {
   return (
     <Layout className="admin-shell min-h-screen">
       <Sider breakpoint="lg" collapsedWidth="0">
-        <div className="px-4 py-4 text-lg font-bold text-white">Shop Admin</div>
+        <div className="admin-brand">
+          <div className="admin-brand__mark">A</div>
+          <div>
+            <p className="m-0 text-base font-bold text-white">Anipad</p>
+            <p className="m-0 text-xs text-slate-400">Store Admin</p>
+          </div>
+        </div>
         <Menu
           theme="dark"
           mode="inline"
@@ -42,14 +48,14 @@ export default function AdminLayout() {
         />
       </Sider>
       <Layout>
-        <Header className="flex items-center justify-between bg-white px-4 shadow-sm">
-          <span className="font-semibold">Quan tri he thong</span>
-          <button onClick={logout} className="inline-flex items-center gap-2 rounded-sm border border-gray-300 px-3 py-2 text-sm">
+        <Header className="admin-header">
+          <span className="font-semibold text-slate-900">Quản trị hệ thống</span>
+          <button onClick={logout} className="admin-logout-button">
             <LogOut size={16} />
-            Dang xuat
+            Đăng xuất
           </button>
         </Header>
-        <Content className="p-4">
+        <Content className="admin-content">
           <Outlet />
         </Content>
       </Layout>

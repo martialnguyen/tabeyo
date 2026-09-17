@@ -73,6 +73,45 @@ async function enrichVisitsWithProducts(visits = []) {
   });
 }
 
+async function enrichOrdersWithProducts(orders = []) {
+  const productIds = [
+    ...new Set(
+      orders
+        .flatMap((order) => order.items || [])
+        .map((item) => item.productId)
+        .filter(Boolean)
+    )
+  ];
+
+  if (!productIds.length) return orders;
+
+  const productRefs = productIds.map((productId) => collection('products').doc(productId));
+  const productDocs = await collection('products').firestore.getAll(...productRefs);
+  const productMap = new Map(
+    productDocs
+      .filter((doc) => doc.exists)
+      .map((doc) => {
+        const product = serializeDoc(doc);
+        const variantMap = new Map((product.variants || []).map((variant) => [variant._id, variant]));
+        return [doc.id, { ...product, variantMap }];
+      })
+  );
+
+  return orders.map((order) => ({
+    ...order,
+    items: (order.items || []).map((item) => {
+      const product = productMap.get(item.productId);
+      const variant = product?.variantMap?.get(item.variantId);
+      return {
+        ...item,
+        productName: item.productName || product?.name || 'Sản phẩm không còn tồn tại',
+        productImage: item.productImage || item.variantImage || variant?.image || product?.images?.[0] || '',
+        variantImage: item.variantImage || variant?.image || ''
+      };
+    })
+  }));
+}
+
 async function normalizeProductPayload(body, files = []) {
   const productImageFiles = files.images || [];
   const variantImageFiles = files.variantImages || [];
@@ -296,7 +335,7 @@ router.delete('/products/:id', async (req, res) => {
 
 router.get('/orders', async (_req, res) => {
   const snapshot = await collection('orders').orderBy('createdAt', 'desc').get();
-  const orders = snapshot.docs.map(serializeDoc);
+  const orders = await enrichOrdersWithProducts(snapshot.docs.map(serializeDoc));
   res.json({ orders });
 });
 

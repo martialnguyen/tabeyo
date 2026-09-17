@@ -60,8 +60,10 @@ router.post('/', async (req, res) => {
         normalizedItems.push({
           productId: productDoc.id,
           productName: product.name,
+          productImage: variant.image || product.images?.[0] || '',
           variantId: variant._id,
           variantLabel: variant.label,
+          variantImage: variant.image || '',
           quantity,
           price: product.price
         });
