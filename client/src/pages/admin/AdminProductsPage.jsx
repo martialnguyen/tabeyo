@@ -7,6 +7,17 @@ function makeId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function formatNumberInput(value) {
+  if (value === undefined || value === null || value === '') return '';
+  const [integer, decimal] = String(value).split('.');
+  const formattedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return decimal ? `${formattedInteger},${decimal}` : formattedInteger;
+}
+
+function parseNumberInput(value) {
+  return String(value || '').replace(/[^\d]/g, '');
+}
+
 // Tạm ẩn đánh giá trong admin. Đổi thành true nếu cần bật lại sau này.
 const SHOW_PRODUCT_REVIEWS = false;
 
@@ -598,70 +609,85 @@ export default function AdminProductsPage() {
       <Modal
         open={open}
         onCancel={() => setOpen(false)}
-        title={editing ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}
+        title={(
+          <div className="admin-product-modal-title">
+            <span>Kho sản phẩm</span>
+            <strong>{editing ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}</strong>
+          </div>
+        )}
         width="min(1040px, calc(100vw - 18px))"
         className="admin-product-modal"
         footer={null}
       >
-        <Form form={form} layout="vertical" onFinish={saveProduct}>
-          <div className="grid gap-3 md:grid-cols-2">
-            <Form.Item name="name" label="Ten san pham" rules={[{ required: true }]}>
+        <Form form={form} layout="vertical" onFinish={saveProduct} className="admin-product-form">
+          <section className="admin-product-section">
+            <div className="admin-product-section__head">
+              <div>
+                <p>Thông tin cơ bản</p>
+                <span>Tên máy, danh mục, giá bán và trạng thái hiển thị.</span>
+              </div>
+            </div>
+            <div className="admin-product-grid">
+            <Form.Item name="name" label="Tên sản phẩm" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item name="category" label="Danh muc">
+            <Form.Item name="category" label="Danh mục">
               <Input />
             </Form.Item>
-            <Form.Item name="price" label="Gia" rules={[{ required: true }]}>
-              <InputNumber className="w-full" min={0} />
+            <Form.Item name="price" label="Giá bán" rules={[{ required: true }]}>
+              <InputNumber className="w-full admin-money-input" min={0} formatter={formatNumberInput} parser={parseNumberInput} addonAfter="đ" />
             </Form.Item>
-            <Form.Item name="originalPrice" label="Gia goc">
-              <InputNumber className="w-full" min={0} />
+            <Form.Item name="originalPrice" label="Giá gốc">
+              <InputNumber className="w-full admin-money-input" min={0} formatter={formatNumberInput} parser={parseNumberInput} addonAfter="đ" />
             </Form.Item>
-            <Form.Item name="soldCount" label="Tong da ban">
+            <Form.Item name="soldCount" label="Tổng đã bán">
               <InputNumber className="w-full" min={0} />
             </Form.Item>
             {SHOW_PRODUCT_REVIEWS && (
               <>
-                <Form.Item name="ratingAverage" label="Diem danh gia">
+                <Form.Item name="ratingAverage" label="Điểm đánh giá">
                   <InputNumber className="w-full" min={0} max={5} step={0.1} />
                 </Form.Item>
-                <Form.Item name="ratingCount" label="So luot danh gia">
+                <Form.Item name="ratingCount" label="Số lượt đánh giá">
                   <InputNumber className="w-full" min={0} />
                 </Form.Item>
               </>
             )}
-            <Form.Item name="images" label="Anh san pham">
+            <Form.Item name="images" label="Ảnh sản phẩm">
               <Upload beforeUpload={() => false} multiple fileList={uploadFileList} onChange={handleUploadChange} showUploadList={false}>
-                <Button icon={<UploadCloud size={16} />}>Chon anh</Button>
+                <Button icon={<UploadCloud size={16} />}>Chọn ảnh</Button>
               </Upload>
             </Form.Item>
-            <Form.Item name="autoSoldEnabled" label="Tu dong tang luot ban" valuePropName="checked">
+            <Form.Item name="autoSoldEnabled" label="Tự động tăng lượt bán" valuePropName="checked">
               <Switch />
             </Form.Item>
-            <Form.Item name="autoReduceStock" label="Tu dong tru ton kho" valuePropName="checked">
+            <Form.Item name="autoReduceStock" label="Tự động trừ tồn kho" valuePropName="checked">
               <Switch />
             </Form.Item>
-            <Form.Item name="autoSoldMin" label="Min moi lan">
+            <Form.Item name="autoSoldMin" label="Tăng tối thiểu mỗi lần">
               <InputNumber className="w-full" min={1} />
             </Form.Item>
-            <Form.Item name="autoSoldMax" label="Max moi lan">
+            <Form.Item name="autoSoldMax" label="Tăng tối đa mỗi lần">
               <InputNumber className="w-full" min={1} />
             </Form.Item>
-            <Form.Item name="isActive" label="Hien thi san pham" valuePropName="checked">
+            <Form.Item name="isActive" label="Hiển thị sản phẩm" valuePropName="checked">
               <Switch />
             </Form.Item>
-          </div>
-          <Form.Item name="description" label="Mo ta">
-            <Input.TextArea rows={4} />
-          </Form.Item>
+            </div>
+            <Form.Item name="description" label="Mô tả sản phẩm" className="admin-product-description">
+              <Input.TextArea rows={4} />
+            </Form.Item>
+          </section>
 
-          <div className="mb-4">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <label className="font-medium">Thu tu hien thi anh</label>
-              <span className="text-xs text-gray-500">Keo tha de doi vi tri. Anh dau la anh dai dien.</span>
+          <section className="admin-product-section">
+            <div className="admin-product-section__head">
+              <div>
+                <p>Ảnh sản phẩm</p>
+                <span>Kéo thả để đổi vị trí. Ảnh đầu tiên sẽ là ảnh đại diện.</span>
+              </div>
             </div>
             {imageItems.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              <div className="admin-product-image-grid">
                 {imageItems.map((imageItem, index) => (
                   <div
                     key={imageItem.id}
@@ -673,31 +699,31 @@ export default function AdminProductsPage() {
                       setDraggedImageIndex(null);
                     }}
                     onDragEnd={() => setDraggedImageIndex(null)}
-                    className={`group relative overflow-hidden rounded-sm border bg-white ${
-                      index === 0 ? 'border-brand-500' : 'border-gray-200'
+                    className={`admin-product-image-card group ${
+                      index === 0 ? 'admin-product-image-card--cover' : ''
                     }`}
                   >
-                    <div className="aspect-square bg-gray-100">
+                    <div className="aspect-square bg-slate-100">
                       <img src={imageItem.url} alt="" className="h-full w-full object-cover" />
                     </div>
-                    <div className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-sm bg-white/90 text-gray-700 shadow-sm">
+                    <div className="absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm">
                       <GripVertical size={16} />
                     </div>
                     {index === 0 && (
-                      <span className="absolute bottom-2 left-2 rounded-sm bg-brand-500 px-2 py-1 text-xs font-medium text-white">
-                        Anh dai dien
+                      <span className="absolute bottom-2 left-2 rounded-full bg-brand-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                        Ảnh đại diện
                       </span>
                     )}
                     {imageItem.type === 'new' && (
-                      <span className="absolute bottom-2 right-2 rounded-sm bg-green-600 px-2 py-1 text-xs font-medium text-white">
-                        Anh moi
+                      <span className="absolute bottom-2 right-2 rounded-full bg-green-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                        Ảnh mới
                       </span>
                     )}
                     <button
                       type="button"
                       onClick={() => removeImage(imageItem)}
-                      className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-sm bg-white/90 text-red-600 opacity-100 shadow-sm md:opacity-0 md:transition md:group-hover:opacity-100"
-                      title="Xoa anh khoi san pham"
+                      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-red-600 opacity-100 shadow-sm md:opacity-0 md:transition md:group-hover:opacity-100"
+                      title="Xoá ảnh khỏi sản phẩm"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -705,45 +731,55 @@ export default function AdminProductsPage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-sm border border-dashed border-gray-300 p-4 text-sm text-gray-500">
-                Chua co anh. Anh moi upload se hien tai day ngay lap tuc.
+              <div className="admin-empty-state">
+                Chưa có ảnh. Ảnh mới upload sẽ hiển thị tại đây ngay lập tức.
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="mb-4 rounded-sm border border-gray-200 p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="m-0 text-lg font-semibold">Nhom phan loai</h3>
-              <Button onClick={addVariantGroup} icon={<Plus size={16} />}>Them nhom</Button>
+          <section className="admin-product-section">
+            <div className="admin-product-section__head admin-product-section__head--actions">
+              <div>
+                <p>Nhóm phân loại</p>
+                <span>Ví dụ: màu sắc, dung lượng, tình trạng máy.</span>
+              </div>
+              <Button onClick={addVariantGroup} icon={<Plus size={16} />}>Thêm nhóm</Button>
             </div>
             <div className="space-y-3">
               {variantGroups.map((group) => (
-                <div key={group._id} className="grid gap-2 md:grid-cols-[180px_1fr_auto]">
-                  <Input value={group.name} onChange={(event) => updateGroupName(group._id, event.target.value)} placeholder="VD: Mau sac" />
+                <div key={group._id} className="admin-variant-group-row">
+                  <Input value={group.name} onChange={(event) => updateGroupName(group._id, event.target.value)} placeholder="VD: Màu sắc" />
                   <Input
                     value={group.values.map((value) => value.value).join(', ')}
                     onChange={(event) => updateGroupValues(group._id, event.target.value)}
-                    placeholder="VD: Xanh, Den, Trang"
+                    placeholder="VD: Xanh, Đen, Trắng"
                   />
-                  <Button danger onClick={() => removeVariantGroup(group._id)}>Xoa</Button>
+                  <Button danger onClick={() => removeVariantGroup(group._id)}>Xoá</Button>
                 </div>
               ))}
             </div>
             <Button className="mt-3" type="primary" ghost onClick={regenerateVariants}>
-              Tao lai to hop phan loai
+              Tạo lại tổ hợp phân loại
             </Button>
-          </div>
+          </section>
 
-          <div className="mb-4 overflow-x-auto rounded-sm border border-gray-200">
+          <section className="admin-product-section admin-product-section--compact">
+            <div className="admin-product-section__head">
+              <div>
+                <p>Tồn kho từng phân loại</p>
+                <span>Cập nhật ảnh, SKU, tồn kho và số lượng đã bán cho từng tổ hợp.</span>
+              </div>
+            </div>
+          <div className="admin-variant-table-wrap">
             <table className="w-full min-w-[920px] text-sm">
-              <thead className="bg-gray-50 text-left">
+              <thead className="bg-slate-50 text-left">
                 <tr>
-                  <th className="p-3">Anh phan loai</th>
-                  <th className="p-3">To hop phan loai</th>
+                  <th className="p-3">Ảnh phân loại</th>
+                  <th className="p-3">Tổ hợp phân loại</th>
                   <th className="p-3">SKU</th>
-                  <th className="p-3">Ton kho</th>
-                  <th className="p-3">Da ban</th>
-                  <th className="p-3">Thao tac</th>
+                  <th className="p-3">Tồn kho</th>
+                  <th className="p-3">Đã bán</th>
+                  <th className="p-3">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -751,7 +787,7 @@ export default function AdminProductsPage() {
                   <tr key={variant._id} className="border-t border-gray-100 align-top">
                     <td className="p-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-sm bg-gray-100">
+                        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
                           {getVariantImageUrl(variant) ? (
                             <img src={getVariantImageUrl(variant)} alt="" className="h-full w-full object-cover" />
                           ) : (
@@ -791,9 +827,9 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="p-3">
                       <Space>
-                        <Button size="small" onClick={() => removeVariantImage(variant._id)}>Xoa anh</Button>
+                        <Button size="small" onClick={() => removeVariantImage(variant._id)}>Xoá ảnh</Button>
                         <Button danger size="small" onClick={() => setVariants((items) => items.filter((item) => item._id !== variant._id))}>
-                          Xoa
+                          Xoá
                         </Button>
                       </Space>
                     </td>
@@ -802,6 +838,7 @@ export default function AdminProductsPage() {
               </tbody>
             </table>
           </div>
+          </section>
 
           {SHOW_PRODUCT_REVIEWS && (
             <div className="mb-4 rounded-sm border border-gray-200 p-4">
@@ -824,7 +861,9 @@ export default function AdminProductsPage() {
               </div>
             </div>
           )}
-          <Button type="primary" htmlType="submit" className="admin-mobile-full">Lưu sản phẩm</Button>
+          <div className="admin-product-actions">
+            <Button type="primary" htmlType="submit" className="admin-mobile-full">Lưu sản phẩm</Button>
+          </div>
         </Form>
       </Modal>
 

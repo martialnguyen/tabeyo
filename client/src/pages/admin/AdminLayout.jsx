@@ -66,9 +66,9 @@ export default function AdminLayout() {
       <Layout>
         <Header className="admin-header">
           <span className="font-semibold text-slate-900">Quản trị hệ thống</span>
-          <button onClick={logout} className="admin-logout-button">
+          <button onClick={logout} className="admin-logout-button" aria-label="Đăng xuất" title="Đăng xuất">
             <LogOut size={16} />
-            Đăng xuất
+            <span>Đăng xuất</span>
           </button>
         </Header>
         <Content className="admin-content">
