@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage.jsx';
 import ProductDetailPage from './pages/ProductDetailPage.jsx';
@@ -19,12 +20,27 @@ function RequireAdmin({ children }) {
   return token ? children : <Navigate to="/admin/login" replace />;
 }
 
+function ScrollToTopOnRouteChange() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === '/') return;
+
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
+  }, [location.pathname, location.search]);
+
+  return null;
+}
+
 function AppShell() {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith('/admin');
 
   return (
     <>
+      <ScrollToTopOnRouteChange />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />

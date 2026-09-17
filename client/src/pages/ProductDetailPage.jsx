@@ -24,6 +24,8 @@ const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND
 const SHOW_PRODUCT_REVIEWS = false;
 const REVIEW_PAGE_SIZE = 5;
 const zaloConsultUrl = 'https://zalo.me/0866426854';
+const MIN_IMAGE_ZOOM = 1;
+const MAX_IMAGE_ZOOM = 4;
 
 function getInitials(name = '') {
   return name
@@ -54,6 +56,21 @@ function getReviewMedia(review = {}) {
     .filter((item) => item.url);
 }
 
+function clampImageZoom(value) {
+  return Math.min(MAX_IMAGE_ZOOM, Math.max(MIN_IMAGE_ZOOM, Number(value.toFixed(2))));
+}
+
+function getPointerDistance(first, second) {
+  return Math.hypot(second.x - first.x, second.y - first.y);
+}
+
+function getPointerCenter(first, second) {
+  return {
+    x: (first.x + second.x) / 2,
+    y: (first.y + second.y) / 2
+  };
+}
+
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -80,6 +97,8 @@ export default function ProductDetailPage() {
   const reviewMediaRef = useRef([]);
   const imageSwipeRef = useRef({ x: 0, y: 0, active: false });
   const imagePanRef = useRef({ x: 0, y: 0, panX: 0, panY: 0, active: false });
+  const imageViewerPointersRef = useRef(new Map());
+  const imagePinchRef = useRef({ active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 });
 
   useEffect(() => {
     api
@@ -109,12 +128,15 @@ export default function ProductDetailPage() {
     setImageZoom(1);
     setImagePan({ x: 0, y: 0 });
     imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+    imageViewerPointersRef.current.clear();
+    imagePinchRef.current = { active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 };
   }, [mainImage]);
 
   useEffect(() => {
     if (imageZoom > 1) return;
     setImagePan({ x: 0, y: 0 });
     imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+    imagePinchRef.current = { active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 };
   }, [imageZoom]);
 
   useEffect(() => {
@@ -167,6 +189,8 @@ export default function ProductDetailPage() {
     setImageZoom(1);
     setImagePan({ x: 0, y: 0 });
     imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+    imageViewerPointersRef.current.clear();
+    imagePinchRef.current = { active: false, distance: 0, zoom: 1, centerX: 0, centerY: 0, panX: 0, panY: 0 };
   };
 
   const openImageViewer = () => {
@@ -183,7 +207,7 @@ export default function ProductDetailPage() {
   const updateImageZoom = (updater) => {
     setImageZoom((currentZoom) => {
       const nextZoom = typeof updater === 'function' ? updater(currentZoom) : updater;
-      return Math.min(3, Math.max(1, Number(nextZoom.toFixed(2))));
+      return clampImageZoom(nextZoom);
     });
   };
 
@@ -193,27 +217,105 @@ export default function ProductDetailPage() {
   };
 
   const handleViewerPointerDown = (event) => {
-    if (imageZoom <= 1) return;
-    imagePanRef.current = {
-      x: event.clientX,
-      y: event.clientY,
-      panX: imagePan.x,
-      panY: imagePan.y,
-      active: true
-    };
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    imageViewerPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    const pointers = [...imageViewerPointersRef.current.values()];
+    if (pointers.length >= 2) {
+      const [first, second] = pointers;
+      const center = getPointerCenter(first, second);
+      imagePinchRef.current = {
+        active: true,
+        distance: getPointerDistance(first, second),
+        zoom: imageZoom,
+        centerX: center.x,
+        centerY: center.y,
+        panX: imagePan.x,
+        panY: imagePan.y
+      };
+      imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
+      return;
+    }
+
+    if (imageZoom > 1) {
+      imagePanRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+        panX: imagePan.x,
+        panY: imagePan.y,
+        active: true
+      };
+    }
   };
 
   const handleViewerPointerMove = (event) => {
+    if (!imageViewerPointersRef.current.has(event.pointerId)) return;
+
+    event.preventDefault();
+    imageViewerPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const pointers = [...imageViewerPointersRef.current.values()];
+
+    if (pointers.length >= 2 && imagePinchRef.current.active) {
+      const [first, second] = pointers;
+      const start = imagePinchRef.current;
+      const distance = getPointerDistance(first, second);
+      const center = getPointerCenter(first, second);
+      const nextZoom = clampImageZoom(start.zoom * (distance / Math.max(start.distance, 1)));
+
+      setImageZoom(nextZoom);
+      setImagePan({
+        x: start.panX + center.x - start.centerX,
+        y: start.panY + center.y - start.centerY
+      });
+      return;
+    }
+
     const start = imagePanRef.current;
     if (!start.active || imageZoom <= 1) return;
+
     setImagePan({
       x: start.panX + event.clientX - start.x,
       y: start.panY + event.clientY - start.y
     });
   };
 
-  const handleViewerPointerUp = () => {
+  const handleViewerPointerEnd = (event) => {
+    imageViewerPointersRef.current.delete(event.pointerId);
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    }
+
+    const pointers = [...imageViewerPointersRef.current.entries()];
+    if (pointers.length >= 2) {
+      const [, first] = pointers[0];
+      const [, second] = pointers[1];
+      const center = getPointerCenter(first, second);
+      imagePinchRef.current = {
+        active: true,
+        distance: getPointerDistance(first, second),
+        zoom: imageZoom,
+        centerX: center.x,
+        centerY: center.y,
+        panX: imagePan.x,
+        panY: imagePan.y
+      };
+      return;
+    }
+
+    imagePinchRef.current = { active: false, distance: 0, zoom: imageZoom, centerX: 0, centerY: 0, panX: imagePan.x, panY: imagePan.y };
+
+    if (pointers.length === 1 && imageZoom > 1) {
+      const [, pointer] = pointers[0];
+      imagePanRef.current = {
+        x: pointer.x,
+        y: pointer.y,
+        panX: imagePan.x,
+        panY: imagePan.y,
+        active: true
+      };
+      return;
+    }
+
     imagePanRef.current = { x: 0, y: 0, panX: 0, panY: 0, active: false };
   };
 
@@ -733,8 +835,8 @@ export default function ProductDetailPage() {
               onWheel={handleViewerWheel}
               onPointerDown={handleViewerPointerDown}
               onPointerMove={handleViewerPointerMove}
-              onPointerUp={handleViewerPointerUp}
-              onPointerCancel={handleViewerPointerUp}
+              onPointerUp={handleViewerPointerEnd}
+              onPointerCancel={handleViewerPointerEnd}
               onDoubleClick={() => updateImageZoom(imageZoom > 1 ? 1 : 2)}
             >
               <img
@@ -759,7 +861,7 @@ export default function ProductDetailPage() {
               </button>
             )}
 
-            <p className="image-viewer__hint">Lăn chuột hoặc bấm +/- để zoom. Kéo ảnh khi đang phóng to.</p>
+            <p className="image-viewer__hint">Chụm/mở 2 ngón tay để zoom. Kéo ảnh khi đang phóng to.</p>
           </div>
         )}
       </main>
