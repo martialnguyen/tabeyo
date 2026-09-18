@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Skeleton } from 'antd';
 import { BadgeCheck, BatteryCharging, Laptop, MonitorSmartphone, ShieldCheck, Smartphone, TabletSmartphone, Truck, UsersRound, Zap } from 'lucide-react';
 import ShopHeader from '../components/ShopHeader.jsx';
 import ProductCard from '../components/ProductCard.jsx';
@@ -262,11 +261,11 @@ export default function HomePage() {
               <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 sm:px-3 sm:text-sm">Deal đang chạy</span>
             )}
           </div>
-          {error && <Alert type="error" message={error} className="mb-3" />}
+          {error && <div className="home-error mb-3">{error}</div>}
           {loading ? (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
               {Array.from({ length: 10 }).map((_, index) => (
-                <Skeleton.Node key={index} active className="!h-[260px] !w-full" />
+                <div key={index} className="product-card-skeleton" />
               ))}
             </div>
           ) : (

@@ -12,6 +12,9 @@ export default function ProductCard({ product }) {
     product.originalPrice > product.price ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
   const animationDelay = `${Math.min(360, Math.abs((product._id || product.name || '').length * 45) % 360)}ms`;
   const isSoldOut = Number(product.stock || 0) <= 0;
+  const optimizedMainImage = mainImage
+    ? assetUrl(mainImage, { width: 520, height: 520, crop: 'fill', gravity: 'auto', quality: 'auto', format: 'auto' })
+    : '';
 
   return (
     <Link
@@ -31,9 +34,12 @@ export default function ProductCard({ product }) {
         )}
         {mainImage ? (
           <img
-            src={assetUrl(mainImage)}
+            src={optimizedMainImage}
             alt={product.name}
             className={`h-full w-full object-cover transition duration-300 group-hover:scale-105 ${isSoldOut ? 'grayscale-[0.25]' : ''}`}
+            loading="lazy"
+            decoding="async"
+            sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-slate-400">No image</div>

@@ -9,9 +9,11 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
   const method = (config.method || 'get').toLowerCase();
+  const url = String(config.url || '');
+  const isPublicProductGet = method === 'get' && !token && /^\/?products(\/.*)?$/.test(url);
   config.headers = config.headers || {};
 
-  if (method === 'get') {
+  if (method === 'get' && !isPublicProductGet) {
     config.headers['Cache-Control'] = 'no-cache';
     config.headers.Pragma = 'no-cache';
     config.params = {
@@ -26,8 +28,33 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const assetUrl = (path) => {
+function buildCloudinaryTransform(options = {}) {
+  const resize = [];
+  const delivery = [];
+  const crop = options.crop || (options.width || options.height ? 'fill' : '');
+
+  if (crop) resize.push(`c_${crop}`);
+  if (options.gravity) resize.push(`g_${options.gravity}`);
+  if (options.width) resize.push(`w_${options.width}`);
+  if (options.height) resize.push(`h_${options.height}`);
+  if (options.dpr) resize.push(`dpr_${options.dpr}`);
+  if (options.format !== false) delivery.push(`f_${options.format || 'auto'}`);
+  if (options.quality !== false) delivery.push(`q_${options.quality || 'auto'}`);
+
+  return [resize.join(','), ...delivery].filter(Boolean).join('/');
+}
+
+function optimizeCloudinaryUrl(url, options) {
+  if (!options || !url.includes('res.cloudinary.com') || !url.includes('/image/upload/')) return url;
+
+  const transform = buildCloudinaryTransform(options);
+  if (!transform) return url;
+
+  return url.replace('/image/upload/', `/image/upload/${transform}/`);
+}
+
+export const assetUrl = (path, options) => {
   if (!path) return '';
-  if (path.startsWith('http')) return path;
-  return `${API_BASE_URL}${path}`;
+  const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
+  return optimizeCloudinaryUrl(url, options);
 };

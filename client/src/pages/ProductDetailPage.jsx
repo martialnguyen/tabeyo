@@ -623,9 +623,11 @@ export default function ProductDetailPage() {
               {mainImage ? (
                 <img
                   key={mainImage}
-                  src={assetUrl(mainImage)}
+                  src={assetUrl(mainImage, { width: 980, height: 980, crop: 'fit', quality: 'auto', format: 'auto' })}
                   alt={product.name}
                   className={`product-main-image image-swipe-photo h-full w-full object-cover ${imageSlideDirection === 'next' ? 'image-swipe-photo--next' : ''} ${imageSlideDirection === 'prev' ? 'image-swipe-photo--prev' : ''}`}
+                  decoding="async"
+                  fetchPriority="high"
                   draggable={false}
                   style={
                     inlineImageZoom > 1
@@ -694,7 +696,13 @@ export default function ProductDetailPage() {
                   onClick={() => changeMainImage(image, imageList.indexOf(image) > currentImageIndex ? 'next' : 'prev')}
                   className={`h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-gray-100 sm:h-auto sm:w-auto sm:aspect-square ${mainImage === image ? 'border-brand-500 ring-2 ring-brand-100' : 'border-gray-200'}`}
                 >
-                  <img src={assetUrl(image)} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={assetUrl(image, { width: 180, height: 180, crop: 'fill', gravity: 'auto', quality: 'auto', format: 'auto' })}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </button>
               ))}
             </div>
@@ -1023,9 +1031,10 @@ export default function ProductDetailPage() {
               onDoubleClick={() => updateImageZoom(imageZoom > 1 ? 1 : 2)}
             >
               <img
-                src={assetUrl(mainImage)}
+                src={assetUrl(mainImage, { width: 1400, height: 1400, crop: 'fit', quality: 'auto:best', format: 'auto' })}
                 alt={product.name}
                 className="image-viewer__image"
+                decoding="async"
                 draggable={false}
                 style={{
                   transform: `translate3d(${imagePan.x}px, ${imagePan.y}px, 0) scale(${imageZoom})`
