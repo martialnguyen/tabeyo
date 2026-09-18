@@ -11,6 +11,7 @@ export default function ProductCard({ product }) {
   const discountPercent =
     product.originalPrice > product.price ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
   const animationDelay = `${Math.min(360, Math.abs((product._id || product.name || '').length * 45) % 360)}ms`;
+  const isSoldOut = Number(product.stock || 0) <= 0;
 
   return (
     <Link
@@ -29,9 +30,20 @@ export default function ProductCard({ product }) {
           </div>
         )}
         {mainImage ? (
-          <img src={assetUrl(mainImage)} alt={product.name} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+          <img
+            src={assetUrl(mainImage)}
+            alt={product.name}
+            className={`h-full w-full object-cover transition duration-300 group-hover:scale-105 ${isSoldOut ? 'grayscale-[0.25]' : ''}`}
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-slate-400">No image</div>
+        )}
+        {isSoldOut && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/48 px-3 backdrop-blur-[1px]">
+            <span className="rounded-full border border-white/30 bg-white/95 px-4 py-2 text-sm font-extrabold uppercase tracking-wide text-rose-600 shadow-xl">
+              Hết hàng
+            </span>
+          </div>
         )}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-16 translate-y-full bg-gradient-to-t from-brand-500/20 to-transparent transition duration-300 group-hover:translate-y-0" />
       </div>
@@ -63,7 +75,7 @@ export default function ProductCard({ product }) {
               {product.ratingAverage || 0} ({product.ratingCount || 0})
             </span>
           )}
-          <span>Còn {product.stock || 0}</span>
+          <span className={isSoldOut ? 'font-bold text-rose-600' : ''}>{isSoldOut ? 'Hết hàng' : `Còn ${product.stock || 0}`}</span>
         </div>
       </div>
     </Link>
