@@ -136,17 +136,6 @@ export default function HomePage() {
       <ShopHeader search={search} onSearch={handleSearch} />
       <main className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-5">
         <section className={`tech-hero overflow-hidden rounded-lg bg-ink-900 text-white shadow-xl ${hasSearch ? 'hidden' : ''}`}>
-          <div className="hero-hotline-banner">
-            <a href={`tel:${hotlinePhone}`} className="hero-hotline-banner__phone">
-              <PhoneCall size={17} />
-              <span>Hotline tư vấn nhanh</span>
-              <strong>{hotlinePhone}</strong>
-            </a>
-            <button type="button" onClick={copyHotline} className="hero-hotline-banner__copy">
-              {hotlineCopied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
-              {hotlineCopied ? 'Đã copy' : 'Copy số'}
-            </button>
-          </div>
           <div className="grid min-h-[300px] gap-5 px-4 py-6 sm:min-h-[340px] sm:px-5 sm:py-7 md:grid-cols-[1.1fr_0.9fr] md:px-9 md:py-9">
             <div className="animate-fade-up flex flex-col justify-center">
               <p className="hero-chip mb-3 inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-100 sm:text-xs">
@@ -172,6 +161,17 @@ export default function HomePage() {
                   <BadgeCheck size={18} className="text-emerald-300" />
                   Tư vấn chọn máy
                 </a>
+                <div className="hero-hotline-inline">
+                  <a href={`tel:${hotlinePhone}`} className="hero-hotline-inline__phone">
+                    <PhoneCall size={17} />
+                    <span>Hotline</span>
+                    <strong>{hotlinePhone}</strong>
+                  </a>
+                  <button type="button" onClick={copyHotline} className="hero-hotline-inline__copy">
+                    {hotlineCopied ? <CheckCircle2 size={15} /> : <Copy size={15} />}
+                    <span>{hotlineCopied ? 'Đã copy' : 'Copy'}</span>
+                  </button>
+                </div>
                 <a
                   href={zaloCommunityUrl}
                   target="_blank"
