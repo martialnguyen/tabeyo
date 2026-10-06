@@ -1,5 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BadgeCheck, BatteryCharging, Laptop, MonitorSmartphone, ShieldCheck, Smartphone, TabletSmartphone, Truck, UsersRound, Zap } from 'lucide-react';
+import {
+  BadgeCheck,
+  BatteryCharging,
+  CheckCircle2,
+  Copy,
+  Laptop,
+  MonitorSmartphone,
+  PhoneCall,
+  ShieldCheck,
+  Smartphone,
+  TabletSmartphone,
+  Truck,
+  UsersRound,
+  Zap
+} from 'lucide-react';
 import ShopHeader from '../components/ShopHeader.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import { api } from '../api/client.js';
@@ -11,6 +25,7 @@ const quickCategories = [
   { label: 'Phụ kiện', icon: BatteryCharging }
 ];
 
+const hotlinePhone = '0866426854';
 const zaloCommunityUrl = 'https://zalo.me/g/gf5geklaz2wkqzlggosp';
 const zaloConsultUrl = 'https://zalo.me/0866426854';
 const productsCacheKey = 'anipad.products.cache.v2';
@@ -43,6 +58,7 @@ export default function HomePage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [hotlineCopied, setHotlineCopied] = useState(false);
   const productsRef = useRef(null);
   const mobileAutoScrollDoneRef = useRef(false);
 
@@ -82,6 +98,16 @@ export default function HomePage() {
     setSearch(keyword);
   };
 
+  const copyHotline = async () => {
+    try {
+      await navigator.clipboard.writeText(hotlinePhone);
+      setHotlineCopied(true);
+      window.setTimeout(() => setHotlineCopied(false), 1400);
+    } catch {
+      setHotlineCopied(false);
+    }
+  };
+
   useEffect(() => {
     if (!hasSearch || typeof window === 'undefined') return undefined;
     const timer = window.setTimeout(() => {
@@ -110,6 +136,17 @@ export default function HomePage() {
       <ShopHeader search={search} onSearch={handleSearch} />
       <main className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-5">
         <section className={`tech-hero overflow-hidden rounded-lg bg-ink-900 text-white shadow-xl ${hasSearch ? 'hidden' : ''}`}>
+          <div className="hero-hotline-banner">
+            <a href={`tel:${hotlinePhone}`} className="hero-hotline-banner__phone">
+              <PhoneCall size={17} />
+              <span>Hotline tư vấn nhanh</span>
+              <strong>{hotlinePhone}</strong>
+            </a>
+            <button type="button" onClick={copyHotline} className="hero-hotline-banner__copy">
+              {hotlineCopied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+              {hotlineCopied ? 'Đã copy' : 'Copy số'}
+            </button>
+          </div>
           <div className="grid min-h-[300px] gap-5 px-4 py-6 sm:min-h-[340px] sm:px-5 sm:py-7 md:grid-cols-[1.1fr_0.9fr] md:px-9 md:py-9">
             <div className="animate-fade-up flex flex-col justify-center">
               <p className="hero-chip mb-3 inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-100 sm:text-xs">
@@ -117,10 +154,10 @@ export default function HomePage() {
                 Tech deal mới mỗi ngày
               </p>
               <h1 className="mb-3 max-w-2xl text-2xl font-extrabold leading-tight sm:mb-4 sm:text-3xl md:text-5xl">
-                iPad, laptop, điện thoại đẹp giá tốt cho người mua nhanh
+                iPad, laptop, điện thoại cũ đẹp, giá tốt, chốt đơn nhanh
               </h1>
               <p className="m-0 max-w-xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-                Chọn đúng phiên bản, xem tồn kho từng màu/size, đặt hàng nhanh không cần tài khoản và thanh toán COD hoặc QR.
+                Chọn đúng máy theo nhu cầu, xem tồn kho rõ ràng, nhận ảnh thật và đặt hàng nhanh không cần tài khoản.
               </p>
               <div className="mt-5 grid gap-2 sm:mt-6 sm:flex sm:flex-wrap sm:gap-3">
                 <a href="#products" className="cta-pulse rounded-md bg-brand-500 px-5 py-3 text-center text-sm font-bold text-white no-underline shadow-lg shadow-blue-950/30 transition hover:bg-brand-600">
