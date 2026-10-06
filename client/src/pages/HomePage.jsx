@@ -148,42 +148,46 @@ export default function HomePage() {
               <p className="m-0 max-w-xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
                 Chọn đúng máy theo nhu cầu, xem tồn kho rõ ràng, nhận ảnh thật và đặt hàng nhanh không cần tài khoản.
               </p>
-              <div className="mt-5 grid gap-2 sm:mt-6 sm:flex sm:flex-wrap sm:gap-3">
-                <a href="#products" className="cta-pulse rounded-md bg-brand-500 px-5 py-3 text-center text-sm font-bold text-white no-underline shadow-lg shadow-blue-950/30 transition hover:bg-brand-600">
-                  Xem sản phẩm hot
-                </a>
-                <a
-                  href={zaloConsultUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-md border border-white/15 px-4 py-3 text-sm font-semibold text-slate-100 no-underline transition hover:border-white/35 hover:bg-white/10 hover:text-white"
-                >
-                  <BadgeCheck size={18} className="text-emerald-300" />
-                  Tư vấn chọn máy
-                </a>
-                <div className="hero-hotline-inline">
-                  <a href={`tel:${hotlinePhone}`} className="hero-hotline-inline__phone">
-                    <PhoneCall size={17} />
-                    <span>Hotline</span>
-                    <strong>{hotlinePhone}</strong>
+              <div className="hero-action-panel mt-5 sm:mt-6">
+                <div className="hero-action-panel__primary">
+                  <a href="#products" className="cta-pulse rounded-md bg-brand-500 px-5 py-3 text-center text-sm font-bold text-white no-underline shadow-lg shadow-blue-950/30 transition hover:bg-brand-600">
+                    Xem sản phẩm hot
                   </a>
-                  <button type="button" onClick={copyHotline} className="hero-hotline-inline__copy">
-                    {hotlineCopied ? <CheckCircle2 size={15} /> : <Copy size={15} />}
-                    <span>{hotlineCopied ? 'Đã copy' : 'Copy'}</span>
-                  </button>
+                  <a
+                    href={zaloConsultUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-md border border-white/15 px-4 py-3 text-sm font-semibold text-slate-100 no-underline transition hover:border-white/35 hover:bg-white/10 hover:text-white"
+                  >
+                    <BadgeCheck size={18} className="text-emerald-300" />
+                    Tư vấn chọn máy
+                  </a>
                 </div>
-                <a
-                  href={zaloCommunityUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="community-zalo-button inline-flex items-center justify-center gap-2 rounded-md border border-sky-300/40 bg-white px-4 py-3 text-sm font-bold text-brand-700 no-underline shadow-lg shadow-blue-950/20 transition hover:border-sky-200 hover:bg-sky-50 hover:text-brand-700"
-                >
-                  <span className="community-zalo-button__icon">
-                    <img src="/zalo-contact.png" alt="" />
-                  </span>
-                  <UsersRound size={17} />
-                  Tham gia cộng đồng
-                </a>
+                <div className="hero-action-panel__support">
+                  <div className="hero-hotline-inline">
+                    <a href={`tel:${hotlinePhone}`} className="hero-hotline-inline__phone">
+                      <PhoneCall size={17} />
+                      <span>Hotline</span>
+                      <strong>{hotlinePhone}</strong>
+                    </a>
+                    <button type="button" onClick={copyHotline} className={`hero-hotline-inline__copy ${hotlineCopied ? 'is-copied' : ''}`}>
+                      {hotlineCopied ? <CheckCircle2 size={15} /> : <Copy size={15} />}
+                      <span>{hotlineCopied ? 'Đã copy' : 'Copy'}</span>
+                    </button>
+                  </div>
+                  <a
+                    href={zaloCommunityUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="community-zalo-button inline-flex items-center justify-center gap-2 rounded-md border border-sky-300/40 bg-white px-4 py-3 text-sm font-bold text-brand-700 no-underline shadow-lg shadow-blue-950/20 transition hover:border-sky-200 hover:bg-sky-50 hover:text-brand-700"
+                  >
+                    <span className="community-zalo-button__icon">
+                      <img src="/zalo-contact.png" alt="" />
+                    </span>
+                    <UsersRound size={17} />
+                    Tham gia cộng đồng
+                  </a>
+                </div>
               </div>
               <div className="mt-5 grid max-w-2xl grid-cols-3 gap-2 text-xs sm:mt-7 sm:gap-3 sm:text-sm">
                 <div className="stat-card rounded-md border border-white/10 bg-white/5 p-3">
