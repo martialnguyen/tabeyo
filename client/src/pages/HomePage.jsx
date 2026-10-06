@@ -170,9 +170,14 @@ export default function HomePage() {
                       <span>Hotline</span>
                       <strong>{hotlinePhone}</strong>
                     </a>
-                    <button type="button" onClick={copyHotline} className={`hero-hotline-inline__copy ${hotlineCopied ? 'is-copied' : ''}`}>
+                    <button
+                      type="button"
+                      onClick={copyHotline}
+                      className={`hero-hotline-inline__copy ${hotlineCopied ? 'is-copied' : ''}`}
+                      aria-label={hotlineCopied ? 'Đã copy số hotline' : 'Copy số hotline'}
+                      title={hotlineCopied ? 'Đã copy số hotline' : 'Copy số hotline'}
+                    >
                       {hotlineCopied ? <CheckCircle2 size={15} /> : <Copy size={15} />}
-                      <span>{hotlineCopied ? 'Đã copy' : 'Copy'}</span>
                     </button>
                   </div>
                   <a
