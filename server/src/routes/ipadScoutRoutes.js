@@ -9,7 +9,6 @@ router.post('/schedule', async (req, res) => {
   if (!process.env.CRON_SECRET || req.headers['x-cron-secret'] !== process.env.CRON_SECRET) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
-  if (!process.env.YAHOO_JP_CLIENT_ID || !process.env.OPENAI_API_KEY) return res.status(503).json({ message: 'Thiếu cấu hình Yahoo hoặc OpenAI API.' });
   runIpadScout('external-schedule').catch((error) => console.error('iPad scout:', error));
   res.status(202).json({ started: true });
 });
@@ -75,7 +74,7 @@ router.get('/results', async (_req, res) => {
 });
 
 router.patch('/results/:id', async (req, res) => {
-  if (!['new', 'saved', 'dismissed'].includes(req.body.status)) return res.status(400).json({ message: 'Trạng thái không hợp lệ.' });
+  if (!['new', 'needs_review', 'saved', 'dismissed'].includes(req.body.status)) return res.status(400).json({ message: 'Trạng thái không hợp lệ.' });
   const ref = collection('ipadScoutResults').doc(req.params.id);
   if (!(await ref.get()).exists) return res.status(404).json({ message: 'Không tìm thấy tin.' });
   await ref.update({ status: req.body.status, updatedAt: new Date() });
@@ -83,7 +82,6 @@ router.patch('/results/:id', async (req, res) => {
 });
 
 router.post('/run', async (_req, res) => {
-  if (!process.env.YAHOO_JP_CLIENT_ID || !process.env.OPENAI_API_KEY) return res.status(503).json({ message: 'Thiếu YAHOO_JP_CLIENT_ID hoặc OPENAI_API_KEY trên server.' });
   runIpadScout('manual').catch((error) => console.error('iPad scout:', error));
   res.status(202).json({ started: true });
 });

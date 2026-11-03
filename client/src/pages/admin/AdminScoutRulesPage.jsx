@@ -85,7 +85,7 @@ export default function AdminScoutRulesPage() {
   ];
 
   return <div className="admin-page space-y-4">
-    <div className="admin-page__heading"><div><h1 className="m-0 text-2xl font-semibold">Máy cần tìm</h1><p className="m-0 text-gray-500">Giá tính bằng JPY. Chỉ tiêu chí đang bật mới được quét.</p></div>
+    <div className="admin-page__heading"><div><h1 className="m-0 text-2xl font-semibold">Máy cần tìm</h1><p className="m-0 text-gray-500">Tìm trên Rakuten công khai. Giá tính bằng JPY; chỉ tiêu chí đang bật mới được quét.</p></div>
       <Space wrap><Upload accept=".xlsx" showUploadList={false} beforeUpload={importExcel}><Button icon={<FileSpreadsheet size={16} />}>Nhập Excel</Button></Upload><Button type="primary" icon={<Plus size={16} />} onClick={() => showForm(null)}>Thêm máy</Button></Space>
     </div>
     <div className="rounded-lg bg-white p-3 shadow-sm"><Table rowKey="_id" columns={columns} dataSource={rules} loading={loading} scroll={{ x: 760 }} pagination={{ pageSize: 10 }} /></div>

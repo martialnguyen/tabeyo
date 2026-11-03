@@ -36,8 +36,6 @@ services:
         sync: false
       - key: ENABLE_IPAD_SCOUT
         value: "false"
-      - key: YAHOO_JP_CLIENT_ID
-        sync: false
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_SCOUT_MODEL
