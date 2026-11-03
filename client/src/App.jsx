@@ -15,6 +15,8 @@ const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage.jsx
 const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage.jsx'));
 const AdminPaymentPage = lazy(() => import('./pages/admin/AdminPaymentPage.jsx'));
 const AdminTrafficPage = lazy(() => import('./pages/admin/AdminTrafficPage.jsx'));
+const AdminScoutRulesPage = lazy(() => import('./pages/admin/AdminScoutRulesPage.jsx'));
+const AdminScoutResultsPage = lazy(() => import('./pages/admin/AdminScoutResultsPage.jsx'));
 
 function RequireAdmin({ children }) {
   const token = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
@@ -61,6 +63,8 @@ function AppShell() {
             <Route path="products" element={<AdminProductsPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
             <Route path="traffic" element={<AdminTrafficPage />} />
+            <Route path="scout/rules" element={<AdminScoutRulesPage />} />
+            <Route path="scout/results" element={<AdminScoutResultsPage />} />
             <Route path="payment" element={<AdminPaymentPage />} />
           </Route>
         </Routes>

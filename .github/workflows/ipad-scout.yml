@@ -1,0 +1,21 @@
+name: Search Japanese iPads
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger scout API
+        env:
+          SCOUT_API_URL: ${{ vars.SCOUT_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "$SCOUT_API_URL"
+          test -n "$CRON_SECRET"
+          curl --fail-with-body --show-error --silent --max-time 600 \
+            -X POST "$SCOUT_API_URL/api/scout/schedule" \
+            -H "x-cron-secret: $CRON_SECRET"

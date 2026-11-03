@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Menu } from 'antd';
-import { Boxes, CreditCard, LayoutDashboard, LogOut, PackageCheck, RadioTower } from 'lucide-react';
+import { Boxes, CreditCard, LayoutDashboard, LogOut, PackageCheck, RadioTower, Search, SlidersHorizontal } from 'lucide-react';
 
 const { Header, Content, Sider } = Layout;
 
@@ -19,6 +19,10 @@ export default function AdminLayout() {
 
   const selectedKey = location.pathname.includes('/admin/products')
     ? 'products'
+    : location.pathname.includes('/admin/scout/rules')
+      ? 'scout-rules'
+      : location.pathname.includes('/admin/scout/results')
+        ? 'scout-results'
     : location.pathname.includes('/admin/orders')
       ? 'orders'
       : location.pathname.includes('/admin/traffic')
@@ -60,6 +64,8 @@ export default function AdminLayout() {
               { key: 'products', icon: <Boxes size={18} />, label: <Link to="/admin/products">Sản phẩm</Link> },
               { key: 'orders', icon: <PackageCheck size={18} />, label: <Link to="/admin/orders">Đơn hàng</Link> },
               { key: 'traffic', icon: <RadioTower size={18} />, label: <Link to="/admin/traffic">Lưu lượng</Link> },
+              { key: 'scout-rules', icon: <SlidersHorizontal size={18} />, label: <Link to="/admin/scout/rules">Máy cần tìm</Link> },
+              { key: 'scout-results', icon: <Search size={18} />, label: <Link to="/admin/scout/results">Tin tìm được</Link> },
               { key: 'payment', icon: <CreditCard size={18} />, label: <Link to="/admin/payment">QR thanh toán</Link> }
             ]}
           />

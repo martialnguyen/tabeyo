@@ -10,7 +10,9 @@ import adminRoutes from './routes/adminRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import cronRoutes from './routes/cronRoutes.js';
 import visitRoutes from './routes/visitRoutes.js';
+import ipadScoutRoutes from './routes/ipadScoutRoutes.js';
 import { startAutoSoldJob } from './jobs/autoSoldJob.js';
+import { startIpadScoutJob } from './jobs/ipadScout.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,9 +51,11 @@ app.use('/api/payment-settings', paymentRoutes);
 app.use('/api/visits', visitRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/cron', cronRoutes);
+app.use('/api/scout', ipadScoutRoutes);
 
 connectFirebase();
 startAutoSoldJob();
+startIpadScoutJob();
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
