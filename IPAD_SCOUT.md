@@ -25,10 +25,40 @@ OPENAI_API_KEY=
 OPENAI_SCOUT_MODEL=gpt-4o-mini
 ENABLE_IPAD_SCOUT=false
 CRON_SECRET=...
+SCOUT_INGEST_SECRET=...
 DISCORD_WEBHOOK_URL=...
 ```
 
 Không đưa API key hoặc webhook lên Git. `DISCORD_WEBHOOK_URL` dùng chung với thông báo đơn hàng hiện có.
+
+## API nhận tin từ job bên ngoài
+
+`POST /api/scout/ingest` nhận một tin JSON hoặc `{ "items": [...] }` (tối đa 20 tin/lần). Gửi khóa `SCOUT_INGEST_SECRET` trong header `x-scout-ingest-secret`. Cấu hình khóa này trên Render Environment và trong chương trình gọi API; không đặt trong frontend, URL hoặc Git. Bắt buộc có `DISCORD_WEBHOOK_URL` nếu muốn gửi Discord.
+
+Ví dụ body:
+
+```json
+{
+  "source": "PayPay Flea Market",
+  "model": "iPad Air 3",
+  "title": "iPad Air 3 64GB Wi-Fi",
+  "configuration": "64GB, Wi-Fi",
+  "priceJpy": 15000,
+  "defects": "Chưa thấy lỗi trong mô tả",
+  "reason": "Cần kiểm tra ảnh màn hình và tình trạng còn bán",
+  "url": "https://paypayfleamarket.yahoo.co.jp/item/z690569764",
+  "imageUrl": "https://example.com/ipad.jpg"
+}
+```
+
+Ví dụ gọi từ PowerShell (khóa lấy từ biến môi trường trên máy gọi):
+
+```powershell
+$body = @{ source = 'PayPay Flea Market'; model = 'iPad Air 3'; title = 'iPad Air 3 64GB Wi-Fi'; priceJpy = 15000; url = 'https://paypayfleamarket.yahoo.co.jp/item/z690569764' } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri 'https://your-render-service.onrender.com/api/scout/ingest' -Headers @{ 'x-scout-ingest-secret' = $env:SCOUT_INGEST_SECRET } -ContentType 'application/json' -Body $body
+```
+
+Server chuẩn hóa link, dùng ID cố định từ link và Firestore `create` để chống ghi trùng kể cả khi hai job chạy cùng lúc. Chỉ tin mới được gửi Discord; gửi lại cùng tin trả `duplicates` mà không báo lại. Tin từ API ngoài được gắn `needs_review`, không coi là đã được xác minh bởi AI. Phản hồi có `discord.configured`, `discord.sent` và `discord.errors`; nếu Discord lỗi, tin đã lưu vẫn được giữ và cần xử lý việc gửi lại thông báo riêng.
 
 ## Lịch 30 phút
 

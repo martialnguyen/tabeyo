@@ -1,9 +1,47 @@
 import express from 'express';
+import { timingSafeEqual } from 'node:crypto';
 import { collection, serializeDoc } from '../utils/firestore.js';
 import { adminAuth } from '../middleware/adminAuth.js';
-import { normalizeScoutRule, runIpadScout } from '../jobs/ipadScout.js';
+import { normalizeScoutRule, notifyNewFinds, runIpadScout } from '../jobs/ipadScout.js';
+import { insertScoutFindings, normalizeScoutFinding } from '../jobs/scoutIngest.js';
 
 const router = express.Router();
+
+function validIngestSecret(value) {
+  const secret = process.env.SCOUT_INGEST_SECRET;
+  if (!secret || typeof value !== 'string') return false;
+  const supplied = Buffer.from(value);
+  const expected = Buffer.from(secret);
+  return supplied.length === expected.length && timingSafeEqual(supplied, expected);
+}
+
+router.post('/ingest', async (req, res) => {
+  if (!validIngestSecret(req.headers['x-scout-ingest-secret'])) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  let items;
+  try {
+    const raw = Array.isArray(req.body?.items) ? req.body.items : [req.body];
+    if (raw.length < 1 || raw.length > 20) {
+      return res.status(400).json({ message: 'Mỗi lần gửi cần từ 1 đến 20 tin đăng.' });
+    }
+    items = raw.map(normalizeScoutFinding);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+  try {
+    const { created, duplicates, notification } = await insertScoutFindings(items, collection('ipadScoutResults'), notifyNewFinds);
+    return res.status(created.length ? 201 : 200).json({
+      inserted: created.length,
+      duplicates,
+      results: created.map(({ _id, url }) => ({ _id, url })),
+      discord: notification
+    });
+  } catch (error) {
+    console.error('Scout ingest:', error);
+    return res.status(500).json({ message: 'Không lưu được tin đăng.' });
+  }
+});
 
 router.post('/schedule', async (req, res) => {
   if (!process.env.CRON_SECRET || req.headers['x-cron-secret'] !== process.env.CRON_SECRET) {

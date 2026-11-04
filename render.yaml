@@ -16,6 +16,8 @@ services:
         generateValue: true
       - key: CRON_SECRET
         generateValue: true
+      - key: SCOUT_INGEST_SECRET
+        generateValue: true
       - key: ENABLE_AUTO_SOLD
         value: "true"
       - key: FIREBASE_PROJECT_ID

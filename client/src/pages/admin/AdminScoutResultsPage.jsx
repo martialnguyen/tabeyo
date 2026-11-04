@@ -56,7 +56,7 @@ export default function AdminScoutResultsPage() {
 
   const last = data.runs?.[0];
   return <div className="admin-page space-y-4">
-    <div className="admin-page__heading"><div><h1 className="m-0 text-2xl font-semibold">Tin iPad tìm được</h1><p className="m-0 text-gray-500">Nguồn Rakuten công khai. Tin “Cần kiểm tra” chưa được AI xác nhận; hãy mở tin gốc trước khi mua.</p></div>
+    <div className="admin-page__heading"><div><h1 className="m-0 text-2xl font-semibold">Tin iPad tìm được</h1><p className="m-0 text-gray-500">Tin “Cần kiểm tra” chưa được xác minh; hãy mở tin gốc trước khi mua.</p></div>
       <Space wrap><Button icon={<RefreshCw size={16} />} onClick={reload} loading={loading}>Tải lại</Button><Button type="primary" icon={<Search size={16} />} onClick={run} loading={running}>Tìm ngay</Button></Space>
     </div>
     <div className="flex flex-wrap items-center gap-3 rounded-lg bg-white p-4 shadow-sm"><Tag color={last?.status === 'completed' ? 'green' : last?.status === 'running' ? 'blue' : 'orange'}>{last?.status || 'Chưa chạy'}</Tag><span>Lần chạy: {date(last?.startedAt)}</span><span>Đã quét: {last?.scanned || 0}</span><span>Tin mới: {last?.found || 0}</span>{last?.errors?.length > 0 && <span className="text-red-600">{last.errors[0]}</span>}</div>

@@ -1,7 +1,7 @@
 import cron from 'node-cron';
-import { createHash } from 'crypto';
 import { collection, serializeDoc } from '../utils/firestore.js';
 import { searchRakuten } from './rakutenCrawler.js';
+import { scoutResultId } from './scoutIngest.js';
 
 const RULES = 'ipadScoutRules';
 const RESULTS = 'ipadScoutResults';
@@ -72,9 +72,10 @@ async function evaluateListings(rule, hits) {
   return JSON.parse(output).assessments || [];
 }
 
-async function notifyNewFinds(findings) {
+export async function notifyNewFinds(findings) {
   const webhook = process.env.DISCORD_WEBHOOK_URL;
-  if (!webhook || !findings.length) return;
+  const notification = { configured: Boolean(webhook), sent: 0, errors: [] };
+  if (!webhook || !findings.length) return notification;
   const adminUrl = process.env.CLIENT_URL?.split(',')[0]?.trim();
   for (let offset = 0; offset < findings.length; offset += 5) {
     const batch = findings.slice(offset, offset + 5);
@@ -87,18 +88,21 @@ async function notifyNewFinds(findings) {
           username: 'Anipad Scout',
           embeds: batch.map((item) => ({
             title: item.title.slice(0, 250), url: item.url, color: 0x2563eb,
-            description: `Giá: ${item.priceJpy.toLocaleString('ja-JP')} JPY\nCấu hình: ${item.configuration || 'Chưa rõ'}\nLưu ý: ${item.defects || 'Không thấy lỗi trong mô tả'}\nTiêu chí: ${item.model}`.slice(0, 4000),
+            description: `Giá: ${item.priceJpy.toLocaleString('ja-JP')} JPY\nCấu hình: ${item.configuration || 'Chưa rõ'}\nLưu ý: ${item.defects || 'Không thấy lỗi trong mô tả'}\nTiêu chí: ${item.model}${item.status === 'needs_review' ? '\nTrạng thái: Cần kiểm tra tin gốc' : ''}`.slice(0, 4000),
             image: item.imageUrl ? { url: item.imageUrl } : undefined,
             footer: { text: adminUrl ? `Xem tại ${adminUrl}/admin/scout/results` : 'Kiểm tra tin gốc trước khi mua' }
           }))
         })
       });
-      if (!response.ok) console.warn(`Scout Discord HTTP ${response.status}`);
+      if (response.ok) notification.sent += batch.length;
+      else notification.errors.push(`Discord HTTP ${response.status}`);
     } catch (error) {
-      console.warn('Scout Discord:', error.message);
+      notification.errors.push(error.message);
     }
     if (offset + 5 < findings.length) await new Promise((resolve) => setTimeout(resolve, 1200));
   }
+  if (notification.errors.length) console.warn('Scout Discord:', notification.errors.join('; '));
+  return notification;
 }
 
 export async function runIpadScout(trigger = 'manual') {
@@ -131,7 +135,7 @@ export async function runIpadScout(trigger = 'manual') {
         scanned += hits.length;
         const unseen = [];
         for (const hit of hits) {
-          const id = createHash('sha256').update(hit.url).digest('hex');
+          const id = scoutResultId(hit.url);
           if (!(await collection(RESULTS).doc(id).get()).exists) unseen.push({ ...hit, id });
         }
         const assessments = await evaluateListings(rule, unseen);
