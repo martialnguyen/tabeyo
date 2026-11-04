@@ -26,14 +26,14 @@ OPENAI_SCOUT_MODEL=gpt-4o-mini
 ENABLE_IPAD_SCOUT=false
 CRON_SECRET=...
 SCOUT_INGEST_SECRET=...
-DISCORD_WEBHOOK_URL=...
+DISCORD_SCOUT_WEBHOOK_URL=...
 ```
 
-Không đưa API key hoặc webhook lên Git. `DISCORD_WEBHOOK_URL` dùng chung với thông báo đơn hàng hiện có.
+Không đưa API key hoặc webhook lên Git. `DISCORD_SCOUT_WEBHOOK_URL` dùng riêng cho tin máy; `DISCORD_WEBHOOK_URL` vẫn dùng cho đơn hàng. Nếu chưa cấu hình webhook tin máy, API vẫn lưu kết quả nhưng trả `discord.configured: false` và không gửi thông báo.
 
 ## API nhận tin từ job bên ngoài
 
-`POST /api/scout/ingest` nhận một tin JSON hoặc `{ "items": [...] }` (tối đa 20 tin/lần). Gửi khóa `SCOUT_INGEST_SECRET` trong header `x-scout-ingest-secret`. Cấu hình khóa này trên Render Environment và trong chương trình gọi API; không đặt trong frontend, URL hoặc Git. Bắt buộc có `DISCORD_WEBHOOK_URL` nếu muốn gửi Discord.
+`POST /api/scout/ingest` nhận một tin JSON hoặc `{ "items": [...] }` (tối đa 20 tin/lần). Gửi khóa `SCOUT_INGEST_SECRET` trong header `x-scout-ingest-secret`. Cấu hình khóa này trên Render Environment và trong chương trình gọi API; không đặt trong frontend, URL hoặc Git. Bắt buộc có `DISCORD_SCOUT_WEBHOOK_URL` nếu muốn gửi Discord cho tin máy.
 
 Ví dụ body:
 

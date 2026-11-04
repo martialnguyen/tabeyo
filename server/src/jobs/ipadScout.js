@@ -73,7 +73,7 @@ async function evaluateListings(rule, hits) {
 }
 
 export async function notifyNewFinds(findings) {
-  const webhook = process.env.DISCORD_WEBHOOK_URL;
+  const webhook = process.env.DISCORD_SCOUT_WEBHOOK_URL;
   const notification = { configured: Boolean(webhook), sent: 0, errors: [] };
   if (!webhook || !findings.length) return notification;
   const adminUrl = process.env.CLIENT_URL?.split(',')[0]?.trim();

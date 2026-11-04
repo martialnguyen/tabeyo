@@ -36,6 +36,8 @@ services:
         sync: false
       - key: DISCORD_WEBHOOK_URL
         sync: false
+      - key: DISCORD_SCOUT_WEBHOOK_URL
+        sync: false
       - key: ENABLE_IPAD_SCOUT
         value: "false"
       - key: OPENAI_API_KEY
