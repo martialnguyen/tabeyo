@@ -88,7 +88,7 @@ export async function notifyNewFinds(findings) {
           username: 'Anipad Scout',
           embeds: batch.map((item) => ({
             title: item.title.slice(0, 250), url: item.url, color: 0x2563eb,
-            description: `Giá: ${item.priceJpy.toLocaleString('ja-JP')} JPY\nCấu hình: ${item.configuration || 'Chưa rõ'}\nLưu ý: ${item.defects || 'Không thấy lỗi trong mô tả'}\nTiêu chí: ${item.model}${item.status === 'needs_review' ? '\nTrạng thái: Cần kiểm tra tin gốc' : ''}`.slice(0, 4000),
+            description: `Tin gốc: ${item.url}\nGiá: ${item.priceJpy.toLocaleString('ja-JP')} JPY\nCấu hình: ${item.configuration || 'Chưa rõ'}\nLưu ý: ${item.defects || 'Không thấy lỗi trong mô tả'}\nTiêu chí: ${item.model}${item.status === 'needs_review' ? '\nTrạng thái: Cần kiểm tra tin gốc' : ''}`.slice(0, 4000),
             image: item.imageUrl ? { url: item.imageUrl } : undefined,
             footer: { text: adminUrl ? `Xem tại ${adminUrl}/admin/scout/results` : 'Kiểm tra tin gốc trước khi mua' }
           }))
