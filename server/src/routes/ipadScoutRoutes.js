@@ -30,11 +30,15 @@ router.post('/ingest', async (req, res) => {
     return res.status(400).json({ message: error.message });
   }
   try {
-    const { created, duplicates, notification } = await insertScoutFindings(items, collection('ipadScoutResults'), notifyNewFinds);
+    const { created, updated, duplicates, notification } = await insertScoutFindings(items, collection('ipadScoutResults'), notifyNewFinds);
     return res.status(created.length ? 201 : 200).json({
       inserted: created.length,
+      updated: updated.length,
       duplicates,
-      results: created.map(({ _id, url }) => ({ _id, url })),
+      results: [
+        ...created.map(({ _id, url }) => ({ _id, url, action: 'inserted' })),
+        ...updated.map(({ _id, url }) => ({ _id, url, action: 'updated' }))
+      ],
       discord: notification
     });
   } catch (error) {

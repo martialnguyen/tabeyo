@@ -38,3 +38,23 @@ test('sends scout alerts only to the dedicated webhook', async () => {
     else process.env.DISCORD_SCOUT_WEBHOOK_URL = previousScout;
   }
 });
+
+test('includes old and new prices in an updated listing alert', async () => {
+  const previousScout = process.env.DISCORD_SCOUT_WEBHOOK_URL;
+  const previousFetch = globalThis.fetch;
+  let payload;
+  try {
+    process.env.DISCORD_SCOUT_WEBHOOK_URL = 'https://discord.example/scout';
+    globalThis.fetch = async (_url, options) => { payload = JSON.parse(options.body); return { ok: true }; };
+    await notifyNewFinds([{
+      title: 'iPad Air 3', url: 'https://example.com/item/1', model: 'iPad Air 3',
+      priceJpy: 12000, previousPriceJpy: 15000, changeType: 'updated', status: 'saved'
+    }]);
+    assert.match(payload.embeds[0].description, /Tin đã cập nhật/);
+    assert.match(payload.embeds[0].description, /12,000 JPY \(trước: 15,000 JPY\)/);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousScout === undefined) delete process.env.DISCORD_SCOUT_WEBHOOK_URL;
+    else process.env.DISCORD_SCOUT_WEBHOOK_URL = previousScout;
+  }
+});

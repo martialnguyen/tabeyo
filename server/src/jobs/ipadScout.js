@@ -86,12 +86,27 @@ export async function notifyNewFinds(findings) {
         signal: AbortSignal.timeout(10000),
         body: JSON.stringify({
           username: 'Anipad Scout',
-          embeds: batch.map((item) => ({
-            title: item.title.slice(0, 250), url: item.url, color: 0x2563eb,
-            description: `Tin gốc: ${item.url}\nGiá: ${item.priceJpy.toLocaleString('ja-JP')} JPY\nCấu hình: ${item.configuration || 'Chưa rõ'}\nLưu ý: ${item.defects || 'Không thấy lỗi trong mô tả'}\nTiêu chí: ${item.model}${item.status === 'needs_review' ? '\nTrạng thái: Cần kiểm tra tin gốc' : ''}`.slice(0, 4000),
-            image: item.imageUrl ? { url: item.imageUrl } : undefined,
-            footer: { text: adminUrl ? `Xem tại ${adminUrl}/admin/scout/results` : 'Kiểm tra tin gốc trước khi mua' }
-          }))
+          embeds: batch.map((item) => {
+            const oldPrice = item.changeType === 'updated' && Number.isFinite(item.previousPriceJpy)
+              && item.previousPriceJpy !== item.priceJpy
+              ? ` (trước: ${item.previousPriceJpy.toLocaleString('ja-JP')} JPY)` : '';
+            const description = [
+              item.changeType === 'updated' ? 'Tin đã cập nhật' : null,
+              `Tin gốc: ${item.url}`,
+              `Giá: ${item.priceJpy.toLocaleString('ja-JP')} JPY${oldPrice}`,
+              `Cấu hình: ${item.configuration || 'Chưa rõ'}`,
+              `Lưu ý: ${item.defects || 'Không thấy lỗi trong mô tả'}`,
+              `Tiêu chí: ${item.model}`,
+              item.status === 'needs_review' ? 'Trạng thái: Cần kiểm tra tin gốc' : null
+            ].filter(Boolean).join('\n').slice(0, 4000);
+            return {
+              title: item.title.slice(0, 250), url: item.url,
+              color: item.changeType === 'updated' ? 0xf59e0b : 0x2563eb,
+              description,
+              image: item.imageUrl ? { url: item.imageUrl } : undefined,
+              footer: { text: adminUrl ? `Xem tại ${adminUrl}/admin/scout/results` : 'Kiểm tra tin gốc trước khi mua' }
+            };
+          })
         })
       });
       if (response.ok) notification.sent += batch.length;

@@ -6,6 +6,7 @@ const QUERYLESS_HOSTS = new Set([
   'jp.mercari.com',
   'store.shopping.yahoo.co.jp'
 ]);
+const FINDING_FIELDS = ['source', 'model', 'title', 'configuration', 'defects', 'reason', 'priceJpy', 'imageUrl'];
 
 export function canonicalizeScoutUrl(value) {
   if (typeof value !== 'string' || value.length > 2048) throw new Error('Link tin đăng không hợp lệ.');
@@ -45,16 +46,21 @@ export function normalizeScoutFinding(input) {
   if (!Number.isInteger(priceJpy) || priceJpy <= 0 || priceJpy > 10000000) {
     throw new Error('Giá JPY phải là số nguyên từ 1 đến 10.000.000.');
   }
-  const imageUrl = textField(input.imageUrl, 'Link ảnh', 2048);
-  if (imageUrl) canonicalizeScoutUrl(imageUrl);
+  const optional = {};
+  for (const [key, label, maxLength] of [
+    ['configuration', 'Cấu hình', 300],
+    ['defects', 'Lỗi / lưu ý', 300],
+    ['reason', 'Lý do', 400],
+    ['imageUrl', 'Link ảnh', 2048]
+  ]) {
+    if (Object.hasOwn(input, key)) optional[key] = textField(input[key], label, maxLength);
+  }
+  if (optional.imageUrl) canonicalizeScoutUrl(optional.imageUrl);
   return {
     source: textField(input.source, 'Nguồn tin', 80, true),
     model: textField(input.model, 'Tên máy cần tìm', 120, true),
     title: textField(input.title, 'Tên tin đăng', 240, true),
-    configuration: textField(input.configuration, 'Cấu hình', 300),
-    defects: textField(input.defects, 'Lỗi / lưu ý', 300),
-    reason: textField(input.reason, 'Lý do', 400),
-    priceJpy, url, imageUrl,
+    ...optional, priceJpy, url,
     status: 'needs_review',
     origin: 'external',
     foundAt: new Date()
@@ -63,22 +69,39 @@ export function normalizeScoutFinding(input) {
 
 export async function insertScoutFindings(items, resultsCollection, notify) {
   const created = [];
+  const updated = [];
   let duplicates = 0;
   let writeError;
   for (const item of items) {
     const id = scoutResultId(item.url);
+    const ref = resultsCollection.doc(id);
     try {
-      await resultsCollection.doc(id).create(item);
-      created.push({ _id: id, ...item });
+      const outcome = await resultsCollection.firestore.runTransaction(async (tx) => {
+        const snapshot = await tx.get(ref);
+        if (!snapshot.exists) {
+          tx.create(ref, item);
+          return { kind: 'created', finding: { _id: id, ...item } };
+        }
+        const previous = snapshot.data();
+        const changes = Object.fromEntries(FINDING_FIELDS
+          .filter((field) => item[field] !== undefined && item[field] !== previous[field])
+          .map((field) => [field, item[field]]));
+        if (!Object.keys(changes).length) return { kind: 'duplicate' };
+        tx.update(ref, { ...changes, updatedAt: new Date() });
+        return {
+          kind: 'updated',
+          finding: { _id: id, ...previous, ...changes, changeType: 'updated', previousPriceJpy: previous.priceJpy }
+        };
+      });
+      if (outcome.kind === 'created') created.push(outcome.finding);
+      else if (outcome.kind === 'updated') updated.push(outcome.finding);
+      else duplicates++;
     } catch (error) {
-      if (error.code === 6 || error.code === 'already-exists') duplicates++;
-      else {
-        writeError = error;
-        break;
-      }
+      writeError = error;
+      break;
     }
   }
-  const notification = await notify(created);
+  const notification = await notify([...created, ...updated]);
   if (writeError) throw writeError;
-  return { created, duplicates, notification };
+  return { created, updated, duplicates, notification };
 }

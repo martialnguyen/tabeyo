@@ -58,7 +58,9 @@ $body = @{ source = 'PayPay Flea Market'; model = 'iPad Air 3'; title = 'iPad Ai
 Invoke-RestMethod -Method Post -Uri 'https://your-render-service.onrender.com/api/scout/ingest' -Headers @{ 'x-scout-ingest-secret' = $env:SCOUT_INGEST_SECRET } -ContentType 'application/json' -Body $body
 ```
 
-Server chuẩn hóa link, dùng ID cố định từ link và Firestore `create` để chống ghi trùng kể cả khi hai job chạy cùng lúc. Chỉ tin mới được gửi Discord; gửi lại cùng tin trả `duplicates` mà không báo lại. Tin từ API ngoài được gắn `needs_review`, không coi là đã được xác minh bởi AI. Phản hồi có `discord.configured`, `discord.sent` và `discord.errors`; nếu Discord lỗi, tin đã lưu vẫn được giữ và cần xử lý việc gửi lại thông báo riêng.
+Server chuẩn hóa link, dùng ID cố định từ link và Firestore transaction để tránh tạo trùng kể cả khi hai job chạy cùng lúc. Link mới tạo tin và gửi Discord. Nếu link đã có nhưng giá hoặc thông tin máy (`source`, `model`, `title`, `configuration`, `defects`, `reason`, `imageUrl`) thay đổi, server cập nhật bản ghi và gửi Discord lần nữa, kèm giá cũ nếu giá đổi. Trường tùy chọn không gửi sẽ giữ giá trị cũ; gửi chuỗi rỗng để xóa. Gửi lại cùng dữ liệu chỉ tăng `duplicates`, không báo lại. Khi cập nhật, trạng thái admin và thời điểm phát hiện ban đầu được giữ nguyên. Tin mới từ API ngoài được gắn `needs_review`, không coi là đã được xác minh bởi AI.
+
+Phản hồi có `inserted`, `updated`, `duplicates`, `results` (với `action` là `inserted` hoặc `updated`) và `discord.configured`, `discord.sent`, `discord.errors`. HTTP 201 khi có tin mới, HTTP 200 khi chỉ cập nhật hoặc gửi trùng. Nếu Discord lỗi, tin đã lưu vẫn được giữ và cần xử lý việc gửi lại thông báo riêng.
 
 ## Lịch 30 phút
 
