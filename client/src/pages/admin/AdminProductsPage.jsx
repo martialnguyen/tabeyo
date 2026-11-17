@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Avatar, Button, Card, Checkbox, Form, Input, InputNumber, Modal, Popconfirm, Rate, Space, Switch, Table, Tag, Upload, message } from 'antd';
-import { GripVertical, ImagePlus, Plus, Trash2, UploadCloud, Video } from 'lucide-react';
+import { Avatar, Button, Card, Checkbox, Form, Image, Input, InputNumber, Modal, Popconfirm, Rate, Space, Switch, Table, Tag, Upload, message } from 'antd';
+import { ChevronLeft, ChevronRight, GripVertical, ImagePlus, Plus, Trash2, UploadCloud, Video } from 'lucide-react';
 import { api, assetUrl } from '../../api/client.js';
 
 function makeId(prefix) {
@@ -654,7 +654,7 @@ export default function AdminProductsPage() {
               </>
             )}
             <Form.Item name="images" label="Ảnh sản phẩm">
-              <Upload beforeUpload={() => false} multiple fileList={uploadFileList} onChange={handleUploadChange} showUploadList={false}>
+              <Upload className="admin-product-upload" accept="image/*" beforeUpload={() => false} multiple fileList={uploadFileList} onChange={handleUploadChange} showUploadList={false}>
                 <Button icon={<UploadCloud size={16} />}>Chọn ảnh</Button>
               </Upload>
             </Form.Item>
@@ -683,7 +683,7 @@ export default function AdminProductsPage() {
             <div className="admin-product-section__head">
               <div>
                 <p>Ảnh sản phẩm</p>
-                <span>Kéo thả để đổi vị trí. Ảnh đầu tiên sẽ là ảnh đại diện.</span>
+                <span className="admin-product-image-help">Kéo thả để đổi vị trí. Ảnh đầu tiên sẽ là ảnh đại diện.</span>
               </div>
             </div>
             {imageItems.length > 0 ? (
@@ -703,30 +703,40 @@ export default function AdminProductsPage() {
                       index === 0 ? 'admin-product-image-card--cover' : ''
                     }`}
                   >
-                    <div className="aspect-square bg-slate-100">
-                      <img src={imageItem.url} alt="" className="h-full w-full object-cover" />
+                    <div className="admin-product-image-preview aspect-square bg-slate-100">
+                      <Image src={imageItem.url} alt={`Ảnh sản phẩm ${index + 1}`} preview={{ mask: 'Xem ảnh' }} />
                     </div>
-                    <div className="absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm">
+                    <div className="admin-product-image-drag absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-sm">
                       <GripVertical size={16} />
                     </div>
                     {index === 0 && (
-                      <span className="absolute bottom-2 left-2 rounded-full bg-brand-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
-                        Ảnh đại diện
+                      <span className="admin-product-cover-badge absolute bottom-2 left-2 rounded-full bg-brand-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                        <span className="sm:hidden">Bìa</span><span className="hidden sm:inline">Ảnh đại diện</span>
                       </span>
                     )}
                     {imageItem.type === 'new' && (
-                      <span className="absolute bottom-2 right-2 rounded-full bg-green-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                      <span className="admin-product-new-badge absolute bottom-2 right-2 rounded-full bg-green-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
                         Ảnh mới
                       </span>
                     )}
                     <button
                       type="button"
                       onClick={() => removeImage(imageItem)}
-                      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-red-600 opacity-100 shadow-sm md:opacity-0 md:transition md:group-hover:opacity-100"
+                      className="admin-product-image-delete absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-red-600 opacity-100 shadow-sm md:opacity-0 md:transition md:group-hover:opacity-100"
+                      aria-label={`Xoá ảnh sản phẩm ${index + 1}`}
                       title="Xoá ảnh khỏi sản phẩm"
                     >
                       <Trash2 size={15} />
                     </button>
+                    <div className="admin-product-image-move">
+                      <button type="button" disabled={index === 0} onClick={() => moveImage(index, index - 1)} aria-label={`Đưa ảnh ${index + 1} lên trước`}>
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span>{index + 1}/{imageItems.length}</span>
+                      <button type="button" disabled={index === imageItems.length - 1} onClick={() => moveImage(index, index + 1)} aria-label={`Đưa ảnh ${index + 1} xuống sau`}>
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -746,15 +756,22 @@ export default function AdminProductsPage() {
               <Button onClick={addVariantGroup} icon={<Plus size={16} />}>Thêm nhóm</Button>
             </div>
             <div className="space-y-3">
-              {variantGroups.map((group) => (
+              {variantGroups.map((group, index) => (
                 <div key={group._id} className="admin-variant-group-row">
-                  <Input value={group.name} onChange={(event) => updateGroupName(group._id, event.target.value)} placeholder="VD: Màu sắc" />
-                  <Input
-                    value={group.values.map((value) => value.value).join(', ')}
-                    onChange={(event) => updateGroupValues(group._id, event.target.value)}
-                    placeholder="VD: Xanh, Đen, Trắng"
-                  />
-                  <Button danger onClick={() => removeVariantGroup(group._id)}>Xoá</Button>
+                  <strong className="admin-variant-group-mobile-title">Nhóm {index + 1}</strong>
+                  <label className="admin-variant-group-field">
+                    <span>Tên nhóm</span>
+                    <Input value={group.name} onChange={(event) => updateGroupName(group._id, event.target.value)} placeholder="VD: Màu sắc" />
+                  </label>
+                  <label className="admin-variant-group-field">
+                    <span>Các lựa chọn, cách nhau bằng dấu phẩy</span>
+                    <Input
+                      value={group.values.map((value) => value.value).join(', ')}
+                      onChange={(event) => updateGroupValues(group._id, event.target.value)}
+                      placeholder="VD: Xanh, Đen, Trắng"
+                    />
+                  </label>
+                  <Button danger className="admin-variant-group-delete" onClick={() => removeVariantGroup(group._id)} aria-label={`Xoá nhóm ${index + 1}`}>Xoá</Button>
                 </div>
               ))}
             </div>
@@ -786,10 +803,11 @@ export default function AdminProductsPage() {
                 {variants.map((variant) => (
                   <tr key={variant._id} className="border-t border-gray-100 align-top">
                     <td className="p-3">
+                      <span className="admin-variant-field-label">Ảnh phân loại</span>
                       <div className="flex items-center gap-3">
                         <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
                           {getVariantImageUrl(variant) ? (
-                            <img src={getVariantImageUrl(variant)} alt="" className="h-full w-full object-cover" />
+                            <Image src={getVariantImageUrl(variant)} alt={`Ảnh ${variant.label}`} preview={{ mask: 'Xem ảnh' }} />
                           ) : (
                             <ImagePlus size={22} className="text-gray-400" />
                           )}
@@ -813,12 +831,15 @@ export default function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="p-3">
+                      <span className="admin-variant-field-label">SKU</span>
                       <Input value={variant.sku} onChange={(event) => updateVariant(variant._id, { sku: event.target.value })} />
                     </td>
                     <td className="p-3">
+                      <span className="admin-variant-field-label">Tồn kho</span>
                       <InputNumber value={variant.stock} min={0} onChange={(value) => updateVariant(variant._id, { stock: Number(value || 0) })} />
                     </td>
                     <td className="p-3">
+                      <span className="admin-variant-field-label">Đã bán</span>
                       <InputNumber
                         value={variant.soldCount}
                         min={0}
@@ -826,6 +847,7 @@ export default function AdminProductsPage() {
                       />
                     </td>
                     <td className="p-3">
+                      <span className="admin-variant-field-label">Thao tác</span>
                       <Space>
                         <Button size="small" onClick={() => removeVariantImage(variant._id)}>Xoá ảnh</Button>
                         <Button danger size="small" onClick={() => setVariants((items) => items.filter((item) => item._id !== variant._id))}>

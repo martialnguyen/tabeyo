@@ -30,6 +30,7 @@ const zaloCommunityUrl = 'https://zalo.me/g/gf5geklaz2wkqzlggosp';
 const zaloConsultUrl = 'https://zalo.me/0866426854';
 const productsCacheKey = 'anipad.products.cache.v2';
 const oldProductsCacheKey = 'anipad.products.cache.v1';
+const isAvailable = (product) => Number(product.stock || 0) > 0;
 
 function applyProducts(list, setProducts) {
   setProducts(list);
@@ -86,10 +87,9 @@ export default function HomePage() {
   }, []);
 
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchSearch = product.name.toLowerCase().includes(search.toLowerCase());
-      return matchSearch;
-    });
+    return products
+      .filter((product) => product.name.toLowerCase().includes(search.toLowerCase()))
+      .sort((first, second) => Number(isAvailable(second)) - Number(isAvailable(first)));
   }, [products, search]);
 
   const hasSearch = search.trim().length > 0;
